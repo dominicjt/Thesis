@@ -69,7 +69,7 @@ class callbackFunction:
         self.kwargs = kwargs
 
     #callback function for saving the data 
-    def callback(self,params):
+    def callback(self,params,*args,**kwargs):
         
         #get the optimal value
         value = self.objective_function(params,dx=self.dx,dy=self.dy,dr=self.dr, **self.kwargs)
@@ -108,7 +108,7 @@ options = {'gmode_inds': [0], 'verbose': False}
 
 #define defualts for experiments
 defaults = {'dx': {}, 'dy': {}, 'dr': {},'Nx': 16, 'Ny': 10, 'dslab': 0.6, 'n_slab': 12,'ra': 0.29,
-            'gmax': 2, 'options': options, 'model': 'l-bfgs-b', 'objective_function': of_Q, 'Nepochs': 5, 'nk':2,
+            'gmax': 2, 'options': options, 'method': 'l-bfgs-b', 'objective_function': of_Q, 'Nepochs': 5, 'nk':2,
             'bounds': None, 'constraints': None , 'gradients': 'exact', 'compute_im': False, 'callback': None}
 
 # Function to add default values from the 'defaults' dictionary to 'metadata'
@@ -186,6 +186,10 @@ def experiment(data,process):
         #convert the funciton parameter to just a name of a function
         metadata['objective_function'] = metadata['objective_function'].__name__
         metadata['callback'] = metadata['callback'].__name__
+
+        #convert constraints to simple true false
+        if metadata['constraints'] != None:
+            metadata['constraints'] = True
 
         #convert results to something json can save 
         results =convert_optimize_result_to_jsonable(results)

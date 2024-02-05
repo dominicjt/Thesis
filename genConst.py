@@ -19,8 +19,17 @@ def L3const(minfreq=None,maxfreq=None,minrad=0,mindist=0,dx={},dy={},dr={},ra=.2
 
     #generate constraints for the radius 
     for key, i in dr.items():
-        constFunc = lambda x: x[i]-minrad
+        constFunc = lambda x,i=i: x[i]-minrad
         constraints.append({'type':'ineq','fun':constFunc})
+
+    #generate constraints that hold the holes in their unit cell
+    for key, i in dx.items():
+        constFunc = lambda x,i=i: 1-npa.abs(x[i])
+        constraints.append({'type':'ineq','fun':constFunc})
+    for key, i in dy.items():
+        constFunc = lambda x,i=i: 1-npa.abs(x[i])
+        constraints.append({'type':'ineq','fun':constFunc})
+
 
     
     #we now generate constraints for holes that are close to eachother. we want one 
@@ -64,13 +73,13 @@ def L3const(minfreq=None,maxfreq=None,minrad=0,mindist=0,dx={},dy={},dr={},ra=.2
         #get the list of larger and lesser holes according to the ordering defined above
         largerNs = [(hole[0]+1,hole[1]),(hole[0],hole[1]+1)]
         smallerNs = [(hole[0],hole[1]-1),(hole[0]-1,hole[1]+1),(hole[0]-1,hole[1]),(hole[0]-1,hole[1]-1)]
-
+        
         #generate the constraint functions by getting the position of the hole by adding the 
         #dy,dy,dr values then getting the starting location
         for neighbor in largerNs:
 
             #skip if not a real hole
-            if neighbor[1]==0 and (neighbor==-1 or neighbor==0 or neighbor==1):
+            if neighbor[1]==0 and (neighbor[0]==-1 or neighbor[0]==0 or neighbor[0]==1):
                 continue
 
             #skip if larger and in moving list since inequality is already made
@@ -83,10 +92,10 @@ def L3const(minfreq=None,maxfreq=None,minrad=0,mindist=0,dx={},dy={},dr={},ra=.2
             else:
                 nx = neighbor[0]
             ny = neighbor[1]*np.sqrt(3)/2
-
+            
             #make constraint function for this value. make it so that if the parameter is not being changed then 
             #the appended zero is picked.
-            constFunc = lambda x: (x.append(0), npa.sqrt((mx+x[xIndex]-nx)**2+(my-x[yIndex]-ny)**2)-(ra+x[rIndex])-ra-mindist)
+            constFunc = lambda x,mx=mx,my=my,xIndex=xIndex,yIndex=yIndex,nx=nx,ny=ny: npa.sqrt((mx+np.append(x,0)[xIndex]-nx)**2+(my-np.append(x,0)[yIndex]-ny)**2)-(ra+np.append(x,0)[rIndex])-ra-mindist
             constraints.append({'type':'ineq','fun':constFunc})
 
         #do the same thing for the smaller holes. this time we have to find the dx,dy,dr values
@@ -94,7 +103,7 @@ def L3const(minfreq=None,maxfreq=None,minrad=0,mindist=0,dx={},dy={},dr={},ra=.2
         for neighbor in smallerNs:
 
             #skip if not a real hole
-            if neighbor[1]==0 and (neighbor==-1 or neighbor==0 or neighbor==1):
+            if neighbor[1]==0 and (neighbor[0]==-1 or neighbor[0]==0 or neighbor[0]==1):
                 continue
 
             #get the index for the changing properties of the neighboring holes 
@@ -114,7 +123,7 @@ def L3const(minfreq=None,maxfreq=None,minrad=0,mindist=0,dx={},dy={},dr={},ra=.2
 
             #make constraint function for this value. make it so that if the parameter is not being changed then 
             #the appended zero is picked. This is done by setting the various indexs to totlength.
-            constFunc = lambda x: (x.append(0), npa.sqrt((mx+x[xIndex]-(nx+x[nxIndex]))**2+(my-x[yIndex]-(ny+x[nyIndex]))**2)-(ra+x[rIndex])-(ra+x[nrIndex])-mindist)
+            constFunc = lambda x,mx=mx,my=my,xIndex=xIndex,yIndex=yIndex,nx=nx,ny=ny,nxIndex=nxIndex,nyIndex=nyIndex: npa.sqrt((mx+np.append(x,0)[xIndex]-(nx+np.append(x,0)[nxIndex]))**2+(my-np.append(x,0)[yIndex]-(ny+np.append(x,0)[nyIndex]))**2)-(ra+np.append(x,0)[rIndex])-(ra+np.append(x,0)[nrIndex])-mindist
             constraints.append({'type':'ineq','fun':constFunc})
 
     #generate constraints for min and max frequency (to be done)

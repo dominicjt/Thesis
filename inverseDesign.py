@@ -1,7 +1,7 @@
 #import relevent libraries 
 import numpy as np
 from defineCrystal import L3Crystal
-import legume
+import legume 
 import autograd.numpy as npa
 from scipy.optimize import minimize
 import functools
@@ -73,7 +73,6 @@ def of_Q(params,dx={},dy={},dr={},**kwargs):
     
     #add parameters to dx, dy, and dr dictionaries 
     dx,dy,dr = placeParams(params,dx=dx,dy=dy,dr=dr)
-    
     
     #do the cavity simulation
     phc = L3Crystal(dx=dx,dy=dy,dr=dr,**kwargs)
@@ -153,11 +152,9 @@ def ID(objective_function=of_Q,method='l-bfgs-b',dx={},dy={},dr={},constraints=N
     #Define the wrapper for the objective function to pass other params
     def objective_function_wrapper(x):
         return objective_function(x, dx=dx, dy=dy, dr=dr, **kwargs)
-
     
-    print(objective_function.__name__)
     #Perform the optimization
     result = minimize(objective_function_wrapper, params, method=method,
-                      bounds=bounds, constraints=constraints, callback=callback)
+                      bounds=bounds, constraints=constraints, callback=callback, options={'gtol': 1,'verbose':3})
 
     return result

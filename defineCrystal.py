@@ -1,7 +1,6 @@
 #import relevent libraries 
-import legume
+import legume 
 import numpy as np
-
 #dx, dy, and dr are dictionaries: {(coordiante):offset,...}
 
 #function that defines the L3 crystal caity structure with various parameters
