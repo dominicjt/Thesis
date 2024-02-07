@@ -2,11 +2,13 @@
 import numpy as np
 from inverseDesign import placeParams
 import autograd.numpy as npa
+from inverseDesign import costWrapper
+from inverseDesign import of_Q
 
 
 #function for generating L3 constraints. all inequality constraints are stated as >=0
-def L3const(minfreq=None,maxfreq=None,minrad=0,mindist=0,dx={},dy={},dr={},ra=.25,**kwargs):
-
+def L3const(minfreq=0,maxfreq=1000,minrad=0,mindist=0,dx={},dy={},dr={},ra=.25,objective_function=of_Q,**kwargs):
+    
     #set constraints initally empty
     constraints = []
 
@@ -126,9 +128,14 @@ def L3const(minfreq=None,maxfreq=None,minrad=0,mindist=0,dx={},dy={},dr={},ra=.2
             constFunc = lambda x,mx=mx,my=my,xIndex=xIndex,yIndex=yIndex,nx=nx,ny=ny,nxIndex=nxIndex,nyIndex=nyIndex: npa.sqrt((mx+np.append(x,0)[xIndex]-(nx+np.append(x,0)[nxIndex]))**2+(my-np.append(x,0)[yIndex]-(ny+np.append(x,0)[nyIndex]))**2)-(ra+np.append(x,0)[rIndex])-(ra+np.append(x,0)[nrIndex])-mindist
             constraints.append({'type':'ineq','fun':constFunc})
 
-    #generate constraints for min and max frequency (to be done)
-    
-        
+    #generate constraints for min and max frequency        
+    #greater then the minimum frequency
+    constFunc = lambda x: costWrapper(x,returnFreq=True,objective_function=objective_function,dx=dx,dy=dy,dr=dr,ra=ra,**kwargs)[1]-minfreq
+    constraints.append({'type':'ineq','fun':constFunc})
+
+    #less then the maximum frequency
+    constFunc = lambda x: maxfreq-costWrapper(x,returnFreq=True,objective_function=objective_function,dx=dx,dy=dy,dr=dr,ra=ra,**kwargs)[1]
+    constraints.append({'type':'ineq','fun':constFunc})
     
     #return constraints 
     return(constraints)

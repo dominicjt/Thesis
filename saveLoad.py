@@ -4,6 +4,8 @@ import json
 import numpy as np 
 from inverseDesign import of_Q
 from inverseDesign import placeParams
+from inverseDesign import costWrapper
+from genConst import L3const
 
 #convert one dictionary
 def convert_keys_to_string(original_dict):
@@ -59,20 +61,22 @@ class callbackFunction:
         self.dy = None
         self.dr = None
         self.kwargs = None
+        self.constraints = None
 
-    def addData(self,filepath,objective_function=None,dx={},dy={},dr={},**kwargs):
+    def addData(self,filepath,objective_function=None,dx={},dy={},dr={},constraints=None,**kwargs):
         self.objective_function = objective_function
         self.filepath = filepath
         self.dx = dx
         self.dy = dy
         self.dr = dr
         self.kwargs = kwargs
+        self.constraints = constraints
 
     #callback function for saving the data 
     def callback(self,params,*args,**kwargs):
         
         #get the optimal value
-        value = self.objective_function(params,dx=self.dx,dy=self.dy,dr=self.dr, **self.kwargs)
+        value,freq = costWrapper(params,objective_function=self.objective_function,returnFreq=True,dx=self.dx,dy=self.dy,dr=self.dr, **self.kwargs)
 
         #output something so we know where we are at
         print(self.iteration,': ',value)
@@ -84,7 +88,7 @@ class callbackFunction:
         dx,dy,dr = convert_keys_in_dict_list([dx,dy,dr])
 
         #format the data
-        step = {'value':value, 'dx':dx, 'dy':dy, 'dr':dr}
+        step = {'value':value, 'freq':freq, 'dx':dx, 'dy':dy, 'dr':dr}
 
         # Read existing data
         with open(self.filepath, 'r') as file:
@@ -104,12 +108,13 @@ class callbackFunction:
 
 #add the different defaults that will be used for the various logging function
 #pick the optoins for the GME computation
-options = {'gmode_inds': [0], 'verbose': False}
+options = {'verbose': False}
 
 #define defualts for experiments
 defaults = {'dx': {}, 'dy': {}, 'dr': {},'Nx': 16, 'Ny': 10, 'dslab': 0.6, 'n_slab': 12,'ra': 0.29,
-            'gmax': 2, 'options': options, 'method': 'l-bfgs-b', 'objective_function': of_Q, 'Nepochs': 5, 'nk':2,
-            'bounds': None, 'constraints': None , 'gradients': 'exact', 'compute_im': False, 'callback': None}
+            'gmax': 2, 'options': options, 'method': 'l-bfgs-b', 'objective_function': of_Q, 'nk':2,
+            'bounds': None, 'constraints': None , 'gradients': 'exact', 'compute_im': False, 'callback': None,
+            'constraints':False,'constFunc':None,'minFreq':0,'maxfreq':1000,'minrad':0,'mindist':0}
 
 # Function to add default values from the 'defaults' dictionary to 'metadata'
 def add_missing_defaults(metadata):
@@ -167,6 +172,12 @@ def experiment(data,process):
         # Add missing defaults to the metadata before processing
         metadata = add_missing_defaults(metadata)
 
+        #if constraints=True then generate constraints, else make it None
+        if metadata['constraints'] == True:
+            metadata['constraints'] = metadata['constFunc'](**metadata)
+        else:
+            metadata['constraints'] = None
+
         #add to the parameters to the callback function class and then replace callback instance with funciton
         metadata['callback'] = callbackFunction()
         metadata['callback'].addData(file_path,**metadata)
@@ -176,6 +187,12 @@ def experiment(data,process):
         metadata['options']['numeig'] = metadata['Nx']*metadata['Ny']+1
         metadata['options']['gradients'] = metadata['gradients']
         metadata['options']['compute_im'] = metadata['compute_im']
+
+        #if constraints=True then generate constraints, else make it None
+        if metadata['constraints']:
+            metadata['constraints'] = metadata['constFunc'](**metadata)
+        else:
+            metadata['constraints'] = None
 
         # Process the data and add a 'results' entry to it
         results = process(**metadata)
@@ -190,6 +207,9 @@ def experiment(data,process):
         #convert constraints to simple true false
         if metadata['constraints'] != None:
             metadata['constraints'] = True
+        if metadata['constFunc'] != None:
+            metadata['constFunc'] = metadata['constFunc'].__name__
+        
 
         #convert results to something json can save 
         results =convert_optimize_result_to_jsonable(results)

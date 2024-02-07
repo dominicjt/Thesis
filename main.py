@@ -2,14 +2,24 @@
 from saveLoad import experiment
 from inverseDesign import ID
 from genConst import L3const
-import numpy as np
 
 
-dx = {(2,0):0,(-2,0):0}
-consts = L3const(minrad=.05,mindist=.05,dx=dx)
+dx = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
+      (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
+      (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
 
-runs = {'name':'test',
-        'trust-constr': {'dx':dx,'method':'trust-constr','constraints':consts}}
+dy = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
+      (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
+      (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
+
+dr = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
+      (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
+      (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
+
+runs = {'name':'freqConfine',
+        'lbfgsbBig': {'dx':dx,'dy':dy,'dr':dr,'method':'l-bfgs-b'},
+        'trust-constrBig': {'dx':dx,'dy':dy,'dr':dr,'method':'trust-constr','constraints':True,'minrad':.05,'mindist':.05,
+                         'minfreq':.261,'maxfreq':.3,'constFunc':L3const}}
 
 experiment(runs,ID)
 
