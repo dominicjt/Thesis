@@ -53,7 +53,8 @@ def placeParams(params,save=False,dx={},dy={},dr={},**kwargs):
 
     return(dx,dy,dr)
 
-#builds the kpoint grid around the center point
+#builds the kpoint grid around the center point 
+#needs to make scaling of y more general
 def kgrid(Nx=0,Ny=0,nk=2,**kwargs):
     kx = np.linspace(0, np.pi/Nx, nk)
     ky = np.linspace(0, np.pi/Ny/np.sqrt(3)*2, nk)
@@ -65,7 +66,7 @@ def kgrid(Nx=0,Ny=0,nk=2,**kwargs):
 #function for running GME
 def rungme(phc,kpoints,gmax=0,options={},**kwargs):
 
-    #run gme
+    #run gm
     gme = legume.GuidedModeExp(phc, gmax=gmax)
     gme.run(kpoints=kpoints, **options)
 
