@@ -1,6 +1,7 @@
 #import relevent libraries 
 import legume 
 import numpy as np
+from math import copysign
 #dx, dy, and dr are dictionaries: {(coordiante):offset,...}
 
 #function that defines the L3 crystal caity structure with various parameters
@@ -120,6 +121,10 @@ def TopoCav(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11.6,r
                 x = ix
             y = iy*np.sqrt(3)/2
 
+            #ensure that it is centered 
+            if sideLength%4==3:
+                x += .5
+
             #make new variables for r that have the flip check applied
             r0FC = r0
             r1FC = r1
@@ -128,8 +133,15 @@ def TopoCav(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11.6,r
             #they are chopped off later
             width = iy+sideLength//2+1
 
+            #value for edcases
+            v = 0
+            if (sideLength%4==1 and ix<0 and iy%2==1) or (sideLength%4==3 and ix>=0 and iy%2==0):
+                v = -1
+            elif (sideLength%4==1 and ix<0 and iy%2==0) or (sideLength%4==3 and ix>=0 and iy%2==1):
+                v = 1
+
             #check for flipping the hole sizes
-            if iy > sideLength//2 or np.abs(ix)>width//2 or (np.abs(ix)==width//2 and iy%2==1 and ix>=0):
+            if iy > sideLength//2 or np.abs(ix+(sideLength%4)/4)+v*.5 > (width-1)//2+.25:
                 r0FC = r1
                 r1FC = r0
 
@@ -140,20 +152,20 @@ def TopoCav(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11.6,r
             phc.add_shape(legume.Circle(x_cent=sx,y_cent=sy,r=sr))
 
             #check for making large hole small, at diagonal edges
-            if np.abs(ix+.5)<=width/2 and np.abs(ix+.2)>=width/2-1:
+            if np.abs(ix+(sideLength%4)/4)+v*.5 == (width-1)//2+.25:
                 r1FC = r0
 
             #next is big holes, get the offset values and add circle
-            bx = x+dx.get((ix,iy,0),0)
-            by = y+dy.get((ix,iy,0),0)-np.sqrt(3)/3
-            br = r1FC+dr.get((ix,iy,0),0)
+            bx = x+dx.get((ix,iy,1),0)
+            by = y+dy.get((ix,iy,1),0)-np.sqrt(3)/3
+            br = r1FC+dr.get((ix,iy,1),0)
             phc.add_shape(legume.Circle(x_cent=bx,y_cent=by,r=br))
 
     #return the crystal
     return(phc,lattice)
 
 #function that generates the crystal structure for the topological triangle cavity
-def TopoCrystal(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=.571,n_slab=12.04,r1=.105,r0=.235,nxbigger=0,nybigger=0,**kwargs):
+def TopoCrystal(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11.6,r1=125/(2*266),r0=56/(266*2),nxbigger=0,nybigger=0,**kwargs):
 
     #set up lattice
     lattice = legume.Lattice([Nx, 0], [0, Ny*np.sqrt(3)/2])

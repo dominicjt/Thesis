@@ -2,5 +2,4 @@ numpy >= 1.24.3
 legume-gme >= 1.16.0
 autograd >= 1.6.2
 scipy >= 1.12.0
-os 
-json
+matplotlib

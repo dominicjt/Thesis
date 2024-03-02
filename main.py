@@ -34,16 +34,16 @@ from process import fieldPlot
 plt.rcParams.update({'font.size': 16})
 
 #%%
-phc, lattice = TopoCav(Nx = 36, Ny = 36, sideLength=21)
+phc, lattice = TopoCav(Nx = 50, Ny = 50, sideLength=15)
 #phc, lattice = TopoWave(Nx = 1, Ny = 13, sideLength=21)
-#phc, lattice = TopoCrystal(Nx=30,Ny=30)
+#phc, lattice = TopoCrystal(Nx=10,Ny=10)
 legume.viz.eps_xy(phc,Nx=300,Ny=300)
-
+#%%
 # Initialize GME
-gme = legume.GuidedModeExp(phc, gmax=2)
+gme = legume.GuidedModeExp(phc, gmax=1.5)
 
 # Solve for the real part of the frequencies
-gme.run(kpoints=np.array([[0],[0]]), verbose=True, compute_im=False,numeig = 2500)
+gme.run(kpoints=np.array([[0],[0]]), verbose=True, compute_im=False,numeig = 4000)
 #%%
 indices = np.where((266/gme.freqs[0] > 960) & (266/gme.freqs[0] < 1080))
 print(indices)
@@ -76,4 +76,8 @@ print(np.where(Qs == np.max(Qs)))
 # %%
 print(np.abs(266/gme.freqs[0] - 1018).argmin())
 
+# %%
+for i in np.arange(minI, maxI):
+    print(i)
+    fieldPlot(phc,gme,gapIndex=i,resolution=300,title=f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, Q = {np.round(Qs[i-minI],2)}',cbarShow=False)
 # %%
