@@ -1,77 +1,77 @@
 #%%
-from defineCrystal import LNCrystal
+from defineCrystal import LNCrystal, TopoCav
 import legume 
 import numpy as np
+import time 
 import matplotlib.pyplot as plt
+from process import fieldPlot
+import json
+import os
 #%%
-#set up loop constants
-side = np.arange(10,30)
-gmaxs = [1,1.25,1.5,1.75,2]
-cavity = [3,5,7]
 
-options = {'verbose': True, 'gradients': 'approx',
-           'numeig': 257,       # get 5 eigenvalues
-           'compute_im': False
-          }
+# Function to read existing data from JSON file
+def read_data(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
 
-phc = LNCrystal(numRemoved=3,Nx=16,Ny=16,dslab=.6,n_slab=12,ra=.29)
-legume.viz.eps_xy(phc)
-gme = legume.GuidedModeExp(phc, gmax=2)
-gme.run(kpoints=np.array([[0],[0]]), **options)
+# Function to write data to JSON file
+def write_data(file_path, data):
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=4)
 
-(freq_im, _, _) = gme.compute_rad(0, [16*16])
-print(gme.freqs[0,16*16]/(2*freq_im[0]))
 # %%
 #set up loop constants
-side = np.arange(10,30,2)
+size = np.arange(40,80,2)
 gmaxs = [1,1.25,1.5,1.75,2]
-cavity = [3,5,7]
+cavity = [9,15,21]
 
-# Initialize a 3D array to store the results
-# The shape is (len(side), len(gmax), len(cavity), 2) to store two computations for each combination
-results = np.zeros((len(side), len(gmaxs), len(cavity), 2))
+file_path = 'results/convTest/data.json'
+
+# Ensure the file is cleared if it exists when the code runs
+if os.path.exists(file_path):
+    open(file_path, 'w').close()
 
 # Loop through each array
-for i, s in enumerate(side):
+for i, s in enumerate(size):
     for j, g in enumerate(gmaxs):
         for k, c in enumerate(cavity):
             print(s,g,c)
 
             options = {'verbose': False, 'gradients': 'approx',
-                       'numeig': s*s+1,       # get 5 eigenvalues
+                       'numeig': s*s+200,       # get 5 eigenvalues
                        'compute_im': False
                        }
-
-            phc = LNCrystal(numRemoved=c,Nx=s,Ny=s,dslab=.6,n_slab=12,ra=.29)
+            
+            #run simulation
+            t = time.time()
+            phc,_ = TopoCav(sideLength=c,Nx=s,Ny=s)
             gme = legume.GuidedModeExp(phc, gmax=g)
             gme.run(kpoints=np.array([[0],[0]]), **options)
 
-            (freq_im, _, _) = gme.compute_rad(0, [s*s])
+            #compute values of interest
+            NTindices = np.where((266/gme.freqs[0] > 1000) & (266/gme.freqs[0] < 1035))[0]
+            minI = NTindices[0]
+            maxI = NTindices[-1]+1
+            (freq_im, _, _) = gme.compute_rad(0, NTindices)
+            t_tot = time.time()-t
+
+            #save data
+            existing_data = read_data(file_path)
+            new_data = {'time':t_tot, 'size':int(s), 'gmax':g, 'cavity':c, 'NTindices':NTindices.tolist(),
+                    'NTwavelength': (266/gme.freqs[0,minI:maxI]).tolist(), 'Q': (gme.freqs[0,minI:maxI]/(2*freq_im)).tolist()}
+            existing_data.append(new_data)
+            write_data(file_path, existing_data)
+
+            #save plots
+            os.makedirs(f'results/convTest/cavity{s}{c}{g*100}', exist_ok=True)
+            for i in NTindices:
+                fieldPlot(phc,gme,gapIndex=i,resolution=200,title=f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={g}',cbarShow=False,save=True,path=f'results/convTest/cavity{s}{c}{g*100}/cavity{i}.png')
+
+
             
             
-            # Save the computations to the results array
-            results[i, j, k, 0] = gme.freqs[0,s*s]
-            results[i, j, k, 1] = gme.freqs[0,s*s]/(2*freq_im[0])
 
-# %%
-
-computation2_slice = results[:8, :, 2, 0]
-print(computation2_slice)
-# Now, let's plot this as a heatmap
-# Adjust these bounds as needed to control the color coding of your heatmap
-vmin_bound = .25
-vmax_bound = .27
-
-plt.figure(figsize=(8, 6))
-plt.imshow(computation2_slice, cmap='hot', interpolation='nearest', vmin=vmin_bound, vmax=vmax_bound)
-plt.colorbar(label='$\omega$ Value')
-plt.title(f'Heatmap of $\omega$ with L{cavity[2]}')
-plt.xlabel('gmax')
-plt.ylabel('Side length')
-plt.xticks(ticks=np.arange(len(gmaxs)), labels=gmaxs)
-plt.yticks(ticks=np.arange(len(side[:8])), labels=side[:8])
-
-plt.show()
-# %%
-print(side)
 # %%

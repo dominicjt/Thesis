@@ -64,7 +64,7 @@ def crystalPlot(phc,fill=True,plot=True,text=True):
     else:
         return(fig,ax)
 
-def fieldPlot(phc,gme,gapIndex=0,kIndex=0,field='E',resolution=100,title='',cbarShow=True):
+def fieldPlot(phc,gme,gapIndex=0,kIndex=0,field='E',resolution=100,title='',cbarShow=True,save=False,path=''):
 
     #get the plot of the phc to add the plot ontop of
     fig,ax = crystalPlot(phc,plot=False,fill=False,text=False)
@@ -92,11 +92,11 @@ def fieldPlot(phc,gme,gapIndex=0,kIndex=0,field='E',resolution=100,title='',cbar
         cbar = fig.colorbar(im, ax=ax, aspect=3)
 
         # Label the color bar
-        cbar.set_label(r'$|E|^2$',fontsize=50)
+        cbar.set_label(r'$|E|^2$',fontsize=100)
 
         # Set the ticks to only have two labels: 0 at the bottom and 'max' at the top
         cbar.set_ticks([np.min(fieldI), np.max(fieldI)])
-        cbar.set_ticklabels(['0', 'Max'],fontsize=50)
+        cbar.set_ticklabels(['0', 'Max'],fontsize=100)
 
     # Remove axis labels
     ax.set_xticklabels([])
@@ -106,8 +106,13 @@ def fieldPlot(phc,gme,gapIndex=0,kIndex=0,field='E',resolution=100,title='',cbar
     ax.set_xticks([])
     ax.set_yticks([])
 
-    plt.title(title, fontsize=60)
+    plt.title(title, fontsize=100)
 
+    if save:
+        plt.savefig(path)
+        plt.close('all')
+        return()
+    
     #show the plot 
     plt.show()
 
