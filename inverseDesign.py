@@ -82,14 +82,17 @@ def compQ(gme,kpoints,Nx=0,Ny=0,**kwargs):
     Q = avg/kpoints[0,:].size
     return(Q)
 
-#compute V averaged over the k-grid  #############(currently Incorrect)!!!!!!!!!!!!!!!!
-def compV(gme,kpoints,Nx=0,Ny=0,n_slab=0,**kwargs):
-    avg = 0
+#compute V averaged over the k-grid 
+#legume automatically normalizes fields so they integrate to uniy so intigral is not computed
+def compV(gme,kpoints,Nx=0,Ny=0,**kwargs):
+    V = 0
     for ik in range(kpoints[0,:].size):
-        field = gme.get_field_xy('e', kind=ik, mind=Nx*Ny, z=0, component='xyz', Nx=200, Ny=200)[0]
-        imax = npa.argmax(npa.abs(field['x'])+npa.abs(field['y'])+npa.abs(field['z']))
-        avg += npa.square(npa.abs(field['x'][imax])+npa.abs(field['y'][imax])+npa.abs(field['z'][imax]))
-    V = 1/(n_slab*avg/kpoints[0,:].size)
+        field = gme.get_field_xy('e', kind=ik, mind=Nx*Ny, z=0, component='xyz', Nx=100, Ny=100)[0]
+        eps = gme.get_eps_xy(0)
+        fieldAbs = npa.abs(field['x'])**2+npa.abs(field['y'])**2+npa.abs(field['z'])**2
+        maxfield = npa.max(fieldAbs*eps)
+        V += 1/maxfield
+    V /= kpoints**2
     return(V)
 
 #Q running of GME. Have callback built in
@@ -146,7 +149,7 @@ def of_V(params,Nx=0,Ny=0,**kwargs):
     #as they should be with sufficent lattice size
     freq = gme.freqs[0,Nx*Ny]
 
-    #compute the mode volume  
+    #compute the mode volsume  
     V = compV(gme,kpoints,Nx=0,Ny=0,**kwargs)
 
     #return V since it is being minized

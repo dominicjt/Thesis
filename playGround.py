@@ -6,8 +6,6 @@ import time
 from process import fieldPlot, fieldPlotS3
 import json
 import os
-import concurrent.futures
-from concurrent.futures import ProcessPoolExecutor
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
@@ -119,11 +117,6 @@ cmap = cm.Greys
 # Create a Normalize object for the colorbar. This will scale 10^4 to 10^6
 norm = mcolors.LogNorm(vmin=1e4, vmax=1e6)
 
-# Create a ScalarMappable and set the colormap and norm
-sm = cm.ScalarMappable(cmap=cmap, norm=norm)
-sm.set_array([])  # You have to set_array for some versions of matplotlib
-
-
 plt.rcParams.update({'font.size': 16})
 size = 44
 cavity = 21
@@ -132,14 +125,13 @@ for d in data:
         
         #plot get the quality factors set up for colloring
         Qs = d['Q']
-        Qs = np.log10(Qs)
-        normQs = (Qs-4)/2
-
 
         scatter = plt.scatter(d['NTwavelength'],np.ones_like(d['NTwavelength'])*d["gmax"],
-                 c=normQs, cmap='Greys', edgecolors='black', linewidth=1.5)  
+                 c=Qs, cmap='Greys', edgecolors='black', linewidth=1.5,norm=norm)  
 
-#Splt.colorbar(sm, ticks=[1e4, 1e5, 1e6], format='${%d}$')   
+cbar = plt.colorbar(scatter, format='${%d}$')  
+cbar.set_ticks([1e4, 1e5, 1e6])  # Setting ticks for the colorbar
+cbar.set_ticklabels(['$10^4$', '$10^5$', '$10^6$'])  # Setting custom tick labels
 plt.xlabel('Wavelength [nm]')
 plt.ylabel('gmax')
 plt.title(f"size = {size}, cavity = {cavity}")
@@ -147,7 +139,6 @@ plt.show()
 # %%
 for d in data:
     Q = d["Q"]
-    print(np.where(Q==np.max(Q))[0])
     index = d["NTindices"][np.where(Q==np.max(Q))[0][0]]
     plt.imshow(mpimg.imread(f"results/gmaxTest/cavity{d['size']}{d['cavity']}{int(d['gmax']*100)}/cavity{index}.png"))
     plt.axis('off')
