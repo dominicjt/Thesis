@@ -55,7 +55,7 @@ def placeParams(params,save=False,dx={},dy={},dr={},**kwargs):
 
 #builds the kpoint grid around the center point 
 #needs to make scaling of y more general
-def kgrid(Nx=0,Ny=0,nk=2,**kwargs):
+def kgrid(Nx=0,Ny=0,nk=1,**kwargs):
     kx = np.linspace(0, np.pi/Nx, nk)
     ky = np.linspace(0, np.pi/Ny/np.sqrt(3)*2, nk)
     kxg, kyg = np.meshgrid(kx, ky)

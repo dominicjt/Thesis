@@ -112,7 +112,7 @@ options = {'verbose': False}
 
 #define defualts for experiments
 defaults = {'dx': {}, 'dy': {}, 'dr': {},'Nx': 16, 'Ny': 10, 'dslab': 0.6, 'n_slab': 12,'ra': 0.29,
-            'gmax': 2, 'options': options, 'method': 'l-bfgs-b', 'objective_function': of_Q, 'nk':2,
+            'gmax': 2, 'options': options, 'method': 'l-bfgs-b', 'objective_function': of_Q, 'nk':1,
             'bounds': None, 'constraints': None , 'gradients': 'exact', 'compute_im': False, 'callback': None,
             'constraints':False,'constFunc':None,'minFreq':0,'maxfreq':1000,'minrad':0,'mindist':0}
 

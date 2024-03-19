@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
+from matplotlib.colors import LogNorm
 
 
 #function that shows plot of crystal with each hole labeled with its coordinate for L3
@@ -66,55 +67,115 @@ def crystalPlot(phc,fill=True,plot=True,text=True):
 
 def fieldPlot(phc,gme,gapIndex=0,kIndex=0,field='E',resolution=100,title='',cbarShow=True,save=False,path=''):
 
-    #get the plot of the phc to add the plot ontop of
-    fig,ax = crystalPlot(phc,plot=False,fill=False,text=False)
-
-    # Define the colors
-    colors = ["white", "red", "black"]
-    # Create a colormap
-    cmap = LinearSegmentedColormap.from_list("custom_red", colors)
-
-    #set up variables for plotting
+    #generate variables
     xyField = gme.get_field_xy(field,kIndex,gapIndex,0,Nx=resolution,Ny=resolution)
     extent = [xyField[1][0],xyField[1][-1],xyField[2][0],xyField[2][-1]]
-
-    #set central color to zero
-    #norm = TwoSlopeNorm(vcenter=0)
-
-    #get the intensity of the field and plot that
     fieldI = np.abs(xyField[0]['x'])**2+np.abs(xyField[0]['y'])**2+np.abs(xyField[0]['z'])**2
     fieldI = fieldI[::-1]
-    im = ax.imshow(fieldI,extent=extent,cmap=cmap)
 
-    if cbarShow:
+    for i in range(1):
 
-        #add the color bar
-        cbar = fig.colorbar(im, ax=ax, aspect=3)
+        #get the plot of the phc to add the plot ontop of
+        fig,ax = crystalPlot(phc,plot=False,fill=False,text=False)
 
-        # Label the color bar
-        cbar.set_label(r'$|E|^2$',fontsize=100)
+        # Define the colors
+        colors = ["white", "red", "black"]
+        # Create a colormap
+        cmap = LinearSegmentedColormap.from_list("custom_red", colors)
 
-        # Set the ticks to only have two labels: 0 at the bottom and 'max' at the top
-        cbar.set_ticks([np.min(fieldI), np.max(fieldI)])
-        cbar.set_ticklabels(['0', 'Max'],fontsize=100)
+        #set central color to zero
+        #norm = TwoSlopeNorm(vcenter=0)
 
-    # Remove axis labels
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    
-    # Optionally, remove the ticks as well
-    ax.set_xticks([])
-    ax.set_yticks([])
+        #get the intensity of the field and plot that
+        if i==0:
+            im = ax.imshow(fieldI,extent=extent,cmap=cmap)
+        else:
+            fieldI = 2*np.imag(np.conjugate(xyField[0]['x'])*xyField[0]['y'])/(np.abs(xyField[0]['x'])**2+np.abs(xyField[0]['y'])**2)
+            plt.imshow(fieldI,extent=extent, cmap='RdBu',vmin=-1,vmax=1)
 
-    plt.title(title, fontsize=100)
+        if cbarShow:
 
-    if save:
-        plt.savefig(path)
-        plt.close('all')
-        return()
-    
-    #show the plot 
-    plt.show()
+            #add the color bar
+            cbar = fig.colorbar(im, ax=ax, aspect=3)
+
+            # Label the color bar
+            cbar.set_label(r'$|E|^2$',fontsize=100)
+
+            # Set the ticks to only have two labels: 0 at the bottom and 'max' at the top
+            cbar.set_ticks([np.min(fieldI), np.max(fieldI)])
+            cbar.set_ticklabels(['0', 'Max'],fontsize=100)
+
+        # Remove axis labels
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        
+        # Optionally, remove the ticks as well
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        plt.title(title, fontsize=100)
+
+        if save:
+            if i == 0:
+                plt.savefig(path+'.png')
+                plt.close('all')
+            if i==1:
+                plt.savefig(path+'S3.png')
+                plt.close('all')
+                return()
+        
+        #show the plot 
+        plt.show()
+
+    #should return gap index and k index
+    return(gapIndex,kIndex)
+
+def fieldPlotS3(phc,gme,gapIndex=0,kIndex=0,field='E',resolution=100,title='',cbarShow=True,save=False,path=''):
+
+    #generate variables
+    xyField = gme.get_field_xy(field,kIndex,gapIndex,0,component='xy',Nx=resolution,Ny=resolution)
+    extent = [xyField[1][0],xyField[1][-1],xyField[2][0],xyField[2][-1]]
+    fieldI = 2*np.imag(np.conjugate(xyField[0]['x'])*xyField[0]['y'])/(np.abs(xyField[0]['x'])**2+np.abs(xyField[0]['y'])**2)
+    fieldI = fieldI[::-1]
+
+    for i in range(1):
+
+        #get the plot of the phc to add the plot ontop of
+        fig,ax = crystalPlot(phc,plot=False,fill=False,text=False)
+
+        #set central color to zero
+        #norm = TwoSlopeNorm(vcenter=0)
+
+        #get the intensity of the field and plot that
+        if i==0:
+            im = ax.imshow(fieldI,extent=extent,cmap='RdBu',vmin=-1,vmax=1)
+        if cbarShow:
+
+            #add the color bar
+            cbar = fig.colorbar(im, ax=ax, aspect=3)
+            cbar.ax.tick_params(labelsize=70)
+
+        # Remove axis labels
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        
+        # Optionally, remove the ticks as well
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        plt.title(title, fontsize=100)
+
+        if save:
+            if i == 0:
+                plt.savefig(path+'.png')
+                plt.close('all')
+            if i==1:
+                plt.savefig(path+'log.png')
+                plt.close('all')
+                return()
+        
+        #show the plot 
+        plt.show()
 
     #should return gap index and k index
     return(gapIndex,kIndex)

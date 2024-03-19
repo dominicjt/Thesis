@@ -1,8 +1,117 @@
 #%%
+from defineCrystal import TopoCav
+import legume 
+import numpy as np
+import time 
+from process import fieldPlot, fieldPlotS3
+import json
+import os
+#%%
+# Set to the number of CPU cores you want to use, force max core useage
+os.environ['MKL_NUM_THREADS'] = '36'
+os.environ['MKL_DYNAMIC'] = 'FALSE'
+
+
+# Function to read existing data from JSON file
+def read_data(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+# Function to write data to JSON file
+def write_data(file_path, data):
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=4)
+
+#extracts frist argument from compute rad for parallelizing
+def compute_rad_p(point):
+    try:
+        iter(point)
+    except TypeError:
+        point = [point]
+    (freq_im, _, _) = gme.compute_rad(0, point)
+    return freq_im[0]
+
+#plotter wrapper for parallizing
+def plotter_wrapper(call):
+    fieldPlot(*call['args'],**call['kwargs'])
+
+# %%
+#set up loop constants
+size = [44]
+gmaxs = np.linspace(1.75,2,10)[1:]
+cavity = [21]
+
+file_path = 'results/gmaxTest/gmaxTest.json'
+
+# Loop through each array
+for i, s in enumerate(size):
+    for j, g in enumerate(gmaxs):
+        for k, c in enumerate(cavity):
+
+            options = {'verbose': False, 'gradients': 'approx',
+                       'numeig': s*s+200,       # get 5 eigenvalues
+                       'compute_im': False
+                       }
+            
+            #run simulation
+            t = time.time()
+            phc, lattice = TopoCav(sideLength=c,Nx=s,Ny=s)
+            gme = legume.GuidedModeExp(phc, gmax=g)
+            gme.run(kpoints=np.array([[0],[0]]), **options)
+            t_tot = time.time()-t
+            
+            NTindices = np.where((266/gme.freqs[0] > 1015) & (266/gme.freqs[0] < 1028))[0]
+            minI = NTindices[0]
+            maxI = NTindices[-1]+1
+
+            #attempting multithredding is to memory intensive
+            # Using ThreadPoolExecutor to parallelize the computation
+            #with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Map the function over the points
+            #    freq_im = list(executor.map(compute_rad_p, NTindices))
+            freq_im = np.array(freq_im)
+
+            (freq_im, _, _) = gme.compute_rad(0,NTindices)
+
+            datatosave = {'time':t_tot,'gmax':g,'cavity':c,'size':s,
+                        'NTindices':NTindices.tolist(),'NTwavelength':(266/gme.freqs[0,minI:maxI]).tolist(),
+                        'Q':(gme.freqs[0,minI:maxI]/(2*freq_im)).tolist()}
+            
+            data = read_data(file_path)
+            data.append(datatosave)
+            write_data(file_path, data)
+
+            #generate a list of dictionaries fro the arguments
+            #calls = []
+            #for i in NTindices:
+            #    args = {'args': [phc,gme],'kwargs': {'gapIndex': i,'resolution':200,'title':f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={g}',
+            #                                          'cbarShow':False,'save':True,'path':f'results/convTest/cavity{s}{c}{int(g*100)}/cavity{i}.png'}}
+            #    calls.append(args)
+
+            #save plots
+            os.makedirs(f'results/gmaxTest/cavity{s}{c}{int(g*100)}', exist_ok=True)
+            for i in NTindices:
+                fieldPlot(phc,gme,gapIndex=i,resolution=200,title=f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={np.round(g,2)}',cbarShow=False,save=True,path=f'results/gmaxTest/cavity{s}{c}{int(g*100)}/{i}')
+
+
+
+
+
+
+
+
+
+
+
+#%%
+#now run optomization 
 from saveLoad import experiment
 from inverseDesign import ID
 from genConst import L3const
-#%%
+import os
 
 
 dx = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
@@ -22,70 +131,6 @@ runs = {'name':'freqConfine',
         'trust-constrBig': {'dx':dx,'dy':dy,'dr':dr,'method':'trust-constr','constraints':True,'minrad':.05,'mindist':.05,
                          'minfreq':.261,'maxfreq':.3,'constFunc':L3const}}
 
-#experiment(runs,ID)
+experiment(runs,ID)
 
 
-#%%
-from defineCrystal import TopoWave, TopoCav, TopoCrystal
-import legume
-import numpy as np
-import matplotlib.pyplot as plt
-from process import fieldPlot
-plt.rcParams.update({'font.size': 16})
-
-#%%
-phc, lattice = TopoCav(Nx = 40, Ny = 40, sideLength=11)
-#phc, lattice = TopoWave(Nx = 1, Ny = 13, sideLength=21)
-#phc, lattice = TopoCrystal(Nx=10,Ny=10)
-legume.viz.eps_xy(phc,Nx=300,Ny=300)
-#%%
-# Initialize GME
-gme = legume.GuidedModeExp(phc, gmax=1.5)
-
-# Solve for the real part of the frequencies
-gme.run(kpoints=np.array([[0],[0]]), verbose=True, compute_im=False,numeig = 2000)
-#%%
-indices = np.where((266/gme.freqs[0] > 960) & (266/gme.freqs[0] < 1080))
-print(indices)
-minI = indices[0][0]
-maxI = indices[0][-1]+1
-
-#compute Q
-(freq_im, _, _) = gme.compute_rad(0,indices[0])
-Qs = gme.freqs[0,minI:maxI]/(2*freq_im)
-#%%
-plt.plot(266/gme.freqs[0,minI:maxI],Qs,'o')
-plt.xlabel('Wavelength [nm]')
-plt.ylabel('Q')
-plt.show()
-# %%
-indicesClose = np.where((266/gme.freqs[0] > 1005) & (266/gme.freqs[0] < 1035))
-minIclose = indicesClose[0][0]
-maxIclose = indicesClose[0][-1]+1
-print(minI)
-
-plt.plot(266/gme.freqs[0,minIclose:maxIclose],Qs[:maxIclose-minIclose],'o')
-plt.xlabel('Wavelength [nm]')
-plt.ylabel('Q')
-plt.show()
-
-#%%
-fieldPlot(phc,gme,gapIndex=1317,resolution=300,title=f'Wavelength = {np.round(266/gme.freqs[0,1317],2)}, Q = {np.round(Qs[1317-minI],2)}',cbarShow=False)
-# %%
-print(np.where(Qs == np.max(Qs)))
-# %%
-print(np.abs(266/gme.freqs[0] - 1018).argmin())
-
-# %%
-indices = np.where((266/gme.freqs[0] > 980) & (266/gme.freqs[0] < 1030))
-print(indices)
-minI = indices[0][0]
-maxI = indices[0][-1]+1
-#%%
-for i in np.arange(minI, maxI):
-    print(i)
-    fieldPlot(phc,gme,gapIndex=i,resolution=300,title=f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, Q = {np.round(Qs[i-minI],2)}',cbarShow=False)
-# %%
-fieldPlot(phc,gme,gapIndex=1612,resolution=500,title=f'Wavelength = {np.round(266/gme.freqs[0,1612],2)}, Q = {np.round(Qs[1612-minI],2)}',cbarShow=False)
-
-# %%
