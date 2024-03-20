@@ -4,12 +4,34 @@ from inverseDesign import of_QV
 from saveLoad import experiment
 from inverseDesign import ID
 import os
+import numpy as np
+import legume
+from process import fieldPlotS3
 # Set to the number of CPU cores you want to use, force max core useage
-os.environ['MKL_NUM_THREADS'] = '36'
-os.environ['MKL_DYNAMIC'] = 'FALSE'
+#os.environ['MKL_NUM_THREADS'] = '36'
+#os.environ['MKL_DYNAMIC'] = 'FALSE'
 #%%
 
 #check the S3 plot for the different points of interest
+pi = np.pi
+t = np.sqrt(3)
+kpoints = np.array([[2*np.pi/t,-2*np.pi/t,-pi/t,pi/t,-pi/t,pi/t],
+                    [0,0,-pi,pi,pi,-pi]])
+
+index = 1960
+options = {'verbose': False, 'gradients': 'approx',
+                           'numeig': index+1,
+                           'compute_im': False
+                        }
+
+phc, lattice = TopoCav(sideLength=21,Nx=44,Ny=44)
+gme = legume.GuidedModeExp(phc, gmax=1.38157894736)
+gme.run(kpoints=kpoints, **options)
+
+plot_path = 'results/S3'
+os.makedirs(plot_path, exist_ok=True)
+for i in range(kpoints[0].size):
+      fieldPlotS3(phc,gme,gapIndex=index,resolution=200,title=f'kx={np.round(kpoints[0,i],2)}, ky = {np.round(kpoints[1,i],2)}',cbarShow=True,save=True,path=plot_path+f'/{i}')
 
 
 
