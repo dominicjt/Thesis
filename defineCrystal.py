@@ -45,7 +45,7 @@ def L3Crystal(Nx=0,Ny=0,dx={},dy={},dr={},dslab=0,n_slab=0,ra=0,nxbigger=0,nybig
             phc.add_shape(legume.Circle(x_cent=x,y_cent=y,r=r))
 
     #return the photonic crystal
-    return(phc)
+    return(phc,lattice)
 
 #function that defines the L3 crystal caity structure with various parameters
 def LNCrystal(numRemoved=3,Nx=0,Ny=0,dx={},dy={},dr={},dslab=0,n_slab=0,ra=0,nxbigger=0,nybigger=0,**kwargs):
@@ -89,12 +89,14 @@ def LNCrystal(numRemoved=3,Nx=0,Ny=0,dx={},dy={},dr={},dslab=0,n_slab=0,ra=0,nxb
             phc.add_shape(legume.Circle(x_cent=x,y_cent=y,r=r))
 
     #return the photonic crystal
-    return(phc)
+    return(phc,lattice)
 
 
 #function that generates the crystal structure for the topological triangle cavity
-def TopoCav(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11.6,r1=125/(2*266),r0=56/(266*2),nxbigger=0,nybigger=0,**kwargs):
+def TopoCav(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11.6,ra=125/(2*266),ra1=56/(266*2),nxbigger=0,nybigger=0,**kwargs):
 
+    r1 = ra
+    r0 = ra1
     #set up lattice
     lattice = legume.Lattice([Nx, 0], [0, Ny*np.sqrt(3)/2])
     phc = legume.PhotCryst(lattice)

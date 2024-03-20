@@ -195,7 +195,6 @@ def experiment(data,process):
             metadata['constraints'] = metadata['constFunc'](**metadata)
         else:
             metadata['constraints'] = None
-
         # Process the data and add a 'results' entry to it
         results = process(**metadata)
 
@@ -205,6 +204,7 @@ def experiment(data,process):
         #convert the funciton parameter to just a name of a function
         metadata['objective_function'] = metadata['objective_function'].__name__
         metadata['callback'] = metadata['callback'].__name__
+        metadata['crystal'] = metadata['crystal'].__name__
 
         #convert constraints to simple true false
         if metadata['constraints'] != None:

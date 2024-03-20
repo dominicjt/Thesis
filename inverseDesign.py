@@ -88,11 +88,11 @@ def compV(gme,kpoints,optMode=0,**kwargs):
     V = 0
     for ik in range(kpoints[0,:].size):
         field = gme.get_field_xy('e', kind=ik, mind=optMode, z=0, component='xyz', Nx=100, Ny=100)[0]
-        eps = gme.get_eps_xy(0)
+        eps = gme.get_eps_xy(0)[0]
         fieldAbs = npa.abs(field['x'])**2+npa.abs(field['y'])**2+npa.abs(field['z'])**2
-        maxfield = npa.max(fieldAbs*eps)
+        maxfield = npa.real(npa.max(fieldAbs*eps))
         V += 1/maxfield
-    V /= kpoints**2
+    V /= kpoints[0,:].size
     return(V)
 
 #Q running of GME. Have callback built in
@@ -107,7 +107,7 @@ def of_Q(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
     dx,dy,dr = placeParams(params,dx=dx,dy=dy,dr=dr)
     
     #do the cavity simulation
-    phc = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
+    phc,_ = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
     
     #get the k points 
     kpoints = kgrid(Nx=Nx,Ny=Ny,**kwargs)
@@ -137,7 +137,7 @@ def of_V(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
     dx,dy,dr = placeParams(params,dx=dx,dy=dy,dr=dr)
     
     #do the cavity simulation
-    phc = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
+    phc,_ = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
     
     #get the k points 
     kpoints = kgrid(Nx=Nx,Ny=Ny,**kwargs)
@@ -159,17 +159,16 @@ def of_V(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
 #Q/V running of GME. Have callback built in
 @functools.lru_cache(maxsize=20) #cashes the inputs and outputs
 def of_QV(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
-
     #inputs are made into tuples and expanded inorder to cache them, 
     #we now decode them. incoding found at costWrapper in this file
     dx,dy,dr,options = decoder(**kwargs)
     
     #add parameters to dx, dy, and dr dictionaries 
     dx,dy,dr = placeParams(params,dx=dx,dy=dy,dr=dr)
-    
+
     #do the cavity simulation
-    phc = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
-    
+    phc,_ = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
+    legume.viz.eps_xy(phc)
     #get the k points 
     kpoints = kgrid(Nx=Nx,Ny=Ny,**kwargs)
     
@@ -186,14 +185,14 @@ def of_QV(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
     #compute the mode volume
     V = compV(gme,kpoints,optMode=optMode,**kwargs)
 
+
     #trying to maximize it so we put a minus sign in front
     return -Q/V,freq
 
 #function to wrap the cpst functons. This returns the frequency if asked for 
 #and allows the cost function to be cached, speeding up run time. The chaching is used
 #for the callback function and the constraint functions
-def costWrapper(params, objective_function=of_Q,returnFreq=False,dx={},dy={},dr={},Nx=0,Ny=0,nk=0,gmax=2,options={},n_slab=0,dslab=0,ra=0,**kwargs):
-
+def costWrapper(params, objective_function=of_Q,returnFreq=False,dx={},dy={},dr={},Nx=0,Ny=0,nk=0,gmax=2,options={},n_slab=0,dslab=0,ra=0,ra1=0,crystal=None,optMode=0,**kwargs):
     #convert params to a hashable type for cahcing
     paramsP = tuple(params)
 
@@ -224,7 +223,7 @@ def costWrapper(params, objective_function=of_Q,returnFreq=False,dx={},dy={},dr=
 
     #call the fuction so that it can be cached
     ###### Note, if you are going to add new dependancies, you must add them here ######
-    cost,freq = objective_function(paramsP,dxKeys=dxKeys,dxVals=dxVals,dyKeys=dyKeys,dyVals=dyVals,drKeys=drKeys,drVals=drVals,Nx=Nx,Ny=Ny,nk=nk,gmax=gmax,optionsKeys=optionsKeys,optionsVals=optionsVals,n_slab=n_slab,dslab=dslab,ra=ra)
+    cost,freq = objective_function(paramsP,dxKeys=dxKeys,dxVals=dxVals,dyKeys=dyKeys,dyVals=dyVals,drKeys=drKeys,drVals=drVals,Nx=Nx,Ny=Ny,nk=nk,gmax=gmax,optionsKeys=optionsKeys,optionsVals=optionsVals,n_slab=n_slab,dslab=dslab,ra=ra,crystal=crystal,optMode=optMode,ra1=ra1)
     
     if returnFreq:
         return(cost,freq)

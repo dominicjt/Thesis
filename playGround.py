@@ -103,10 +103,10 @@ for i, s in enumerate(size):
             
 
 # %%
-# data2 = read_data("results/convTest/dataSecond.json")
-# data1 = read_data("results/convTest/dataFirst.json")
-# data3 = read_data("results/convTest/data.json")
-# data = np.array(data1+data2+data3)
+#data2 = read_data("results/convTest/dataSecond.json")
+#data1 = read_data("results/convTest/dataFirst.json")
+#data3 = read_data("results/convTest/data.json")
+#data = np.array(data1+data2+data3)
 data = np.array(read_data("results/gmaxTest/gmaxTest.json"))
 
 #%%
@@ -138,30 +138,6 @@ plt.title(f"size = {size}, cavity = {cavity}")
 plt.show()
 # %%
 for d in data:
-    Q = d["Q"]
-    index = d["NTindices"][np.where(Q==np.max(Q))[0][0]]
-    plt.imshow(mpimg.imread(f"results/gmaxTest/cavity{d['size']}{d['cavity']}{int(d['gmax']*100)}/cavity{index}.png"))
-    plt.axis('off')
-    plt.show()
-# %%
-dr1 = {(10,11,1):.1,
-      (10,10,0):.1,
-      (10,10,1):.1,
-      (9,11,1):.1,
-      (9,10,0):.1,
-      (9,9,0):.1}
-dr2 = {(-11,11,1):.1,
-      (-10,11,1):.1,
-      (-10,10,0):.1,
-      (-10,10,1):.1,
-      (-9,10,0):.1,
-      (-10,9,0):.1}
-dr = {(0,-10,0):.1,
-      (0,-10,1):.1,
-      (0,-9,0):.1,
-      (0,-9,1):.1,
-      (-1,-9,0):.1,
-      (-1,-9,1):.1}
-phc, lattice = TopoCav(sideLength=21,Nx=26,Ny=26,dr=dr)
-crystalPlot(phc)
+    plt.scatter(d['gmax'],d['time'])
+plt.show()
 # %%
