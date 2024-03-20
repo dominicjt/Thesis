@@ -31,7 +31,7 @@ gme.run(kpoints=kpoints, **options)
 plot_path = 'results/S3'
 os.makedirs(plot_path, exist_ok=True)
 for i in range(kpoints[0].size):
-      fieldPlotS3(phc,gme,gapIndex=index,resolution=200,title=f'kx={np.round(kpoints[0,i],2)}, ky = {np.round(kpoints[1,i],2)}',cbarShow=True,save=True,path=plot_path+f'/{i}')
+      fieldPlotS3(phc,gme,gapIndex=index,resolution=600,title=f'kx={np.round(kpoints[0,i],2)}, ky = {np.round(kpoints[1,i],2)}',cbarShow=True,save=True,path=plot_path+f'/{i}')
 
 
 
