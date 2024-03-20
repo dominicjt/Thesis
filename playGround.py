@@ -3,7 +3,7 @@ from defineCrystal import TopoCav
 import legume 
 import numpy as np
 import time 
-from process import fieldPlot, fieldPlotS3
+from process import fieldPlot, fieldPlotS3, crystalPlot
 import json
 import os
 import matplotlib.pyplot as plt
@@ -143,4 +143,25 @@ for d in data:
     plt.imshow(mpimg.imread(f"results/gmaxTest/cavity{d['size']}{d['cavity']}{int(d['gmax']*100)}/cavity{index}.png"))
     plt.axis('off')
     plt.show()
+# %%
+dr1 = {(10,11,1):.1,
+      (10,10,0):.1,
+      (10,10,1):.1,
+      (9,11,1):.1,
+      (9,10,0):.1,
+      (9,9,0):.1}
+dr2 = {(-11,11,1):.1,
+      (-10,11,1):.1,
+      (-10,10,0):.1,
+      (-10,10,1):.1,
+      (-9,10,0):.1,
+      (-10,9,0):.1}
+dr = {(0,-10,0):.1,
+      (0,-10,1):.1,
+      (0,-9,0):.1,
+      (0,-9,1):.1,
+      (-1,-9,0):.1,
+      (-1,-9,1):.1}
+phc, lattice = TopoCav(sideLength=21,Nx=26,Ny=26,dr=dr)
+crystalPlot(phc)
 # %%

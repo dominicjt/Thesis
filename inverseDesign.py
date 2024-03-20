@@ -97,7 +97,7 @@ def compV(gme,kpoints,optMode=0,**kwargs):
 
 #Q running of GME. Have callback built in
 @functools.lru_cache(maxsize=20) #cashes the inputs and outputs (causes a problem, look to legume docs for correct way)
-def of_Q(params,Nx=0,Ny=0,optMode=0,**kwargs):
+def of_Q(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
 
     #inputs are made into tuples and expanded inorder to cache them, 
     #we now decode them. incoding found at costWrapper in this file
@@ -107,7 +107,7 @@ def of_Q(params,Nx=0,Ny=0,optMode=0,**kwargs):
     dx,dy,dr = placeParams(params,dx=dx,dy=dy,dr=dr)
     
     #do the cavity simulation
-    phc = L3Crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
+    phc = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
     
     #get the k points 
     kpoints = kgrid(Nx=Nx,Ny=Ny,**kwargs)
@@ -127,7 +127,7 @@ def of_Q(params,Nx=0,Ny=0,optMode=0,**kwargs):
 
 #V running of GME. Have callback built in
 @functools.lru_cache(maxsize=20) #cashes the inputs and outputs
-def of_V(params,Nx=0,Ny=0,optMode=0,**kwargs):
+def of_V(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
 
     #inputs are made into tuples and expanded inorder to cache them, 
     #we now decode them. incoding found at costWrapper in this file
@@ -137,7 +137,7 @@ def of_V(params,Nx=0,Ny=0,optMode=0,**kwargs):
     dx,dy,dr = placeParams(params,dx=dx,dy=dy,dr=dr)
     
     #do the cavity simulation
-    phc = L3Crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
+    phc = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
     
     #get the k points 
     kpoints = kgrid(Nx=Nx,Ny=Ny,**kwargs)
@@ -158,7 +158,7 @@ def of_V(params,Nx=0,Ny=0,optMode=0,**kwargs):
 
 #Q/V running of GME. Have callback built in
 @functools.lru_cache(maxsize=20) #cashes the inputs and outputs
-def of_QV(params,Nx=0,Ny=0,optMode=0,**kwargs):
+def of_QV(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
 
     #inputs are made into tuples and expanded inorder to cache them, 
     #we now decode them. incoding found at costWrapper in this file
@@ -168,7 +168,7 @@ def of_QV(params,Nx=0,Ny=0,optMode=0,**kwargs):
     dx,dy,dr = placeParams(params,dx=dx,dy=dy,dr=dr)
     
     #do the cavity simulation
-    phc = L3Crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
+    phc = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
     
     #get the k points 
     kpoints = kgrid(Nx=Nx,Ny=Ny,**kwargs)

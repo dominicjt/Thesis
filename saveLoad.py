@@ -6,6 +6,7 @@ from inverseDesign import of_Q
 from inverseDesign import placeParams
 from inverseDesign import costWrapper
 from genConst import L3const
+from defineCrystal import L3Crystal
 
 #convert one dictionary
 def convert_keys_to_string(original_dict):
@@ -114,7 +115,8 @@ options = {'verbose': False}
 defaults = {'dx': {}, 'dy': {}, 'dr': {},'Nx': 16, 'Ny': 10, 'dslab': 0.6, 'n_slab': 12,'ra': 0.29,
             'gmax': 2, 'options': options, 'method': 'l-bfgs-b', 'objective_function': of_Q, 'nk':1,
             'bounds': None, 'constraints': None , 'gradients': 'exact', 'compute_im': False, 'callback': None,
-            'constraints':False,'constFunc':None,'minFreq':0,'maxfreq':1000,'minrad':0,'mindist':0,"optMode":0}
+            'constraints':False,'constFunc':None,'minFreq':0,'maxfreq':1000,'minrad':0,'mindist':0,"optMode":0,
+            'crystal':L3Crystal,'sidelength':0}
 
 # Function to add default values from the 'defaults' dictionary to 'metadata'
 def add_missing_defaults(metadata):

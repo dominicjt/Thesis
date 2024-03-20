@@ -3,8 +3,24 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
-from matplotlib.colors import LogNorm
+from defineCrystal import TopoCav
+import json
+import time
+import os
+import legume
 
+# Function to read existing data from JSON file
+def read_data(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+# Function to write data to JSON file
+def write_data(file_path, data):
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=4)
 
 #function that shows plot of crystal with each hole labeled with its coordinate for L3
 
@@ -16,9 +32,7 @@ from matplotlib.colors import LogNorm
 
 #produce bar graphs to compare different results
 
-#produce supercell heat map 
-
-def crystalPlot(phc,fill=True,plot=True,text=True):
+def crystalPlot(phc,fill=True,plot=True,text=True,color={}):
 
     # Create a new figure and axis with a specified figure size
     fig, ax = plt.subplots(figsize=(phc.lattice.a1[0], phc.lattice.a2[1]))  # Here, the figure size is set to 6x6 inches
@@ -179,3 +193,58 @@ def fieldPlotS3(phc,gme,gapIndex=0,kIndex=0,field='E',resolution=100,title='',cb
 
     #should return gap index and k index
     return(gapIndex,kIndex)
+
+#this function is for running convergance testing
+def convergance(size,gmax,cavity,file_path,minfreq,maxfreq,kpoints=np.array([[0],[0]]),plot=False,res=200):
+    json_path = file_path+"/data.json"
+    # Loop through each array
+    for i, s in enumerate(size):
+        for j, g in enumerate(gmax):
+            for k, c in enumerate(cavity):
+
+                options = {'verbose': False, 'gradients': 'approx',
+                           'numeig': s*s+200,       # get 5 eigenvalues
+                           'compute_im': False
+                        }
+            
+                #run simulation
+                t = time.time()
+                phc, lattice = TopoCav(sideLength=c,Nx=s,Ny=s)
+                gme = legume.GuidedModeExp(phc, gmax=g)
+                gme.run(kpoints=kpoints, **options)
+                t_tot = time.time()-t
+            
+                NTindices = np.where((gme.freqs[0] > minfreq) & (gme.freqs[0] < maxfreq))[0]
+                minI = NTindices[0]
+                maxI = NTindices[-1]+1
+
+                #attempting multithredding is to memory intensive
+                # Using ThreadPoolExecutor to parallelize the computation
+                #with concurrent.futures.ThreadPoolExecutor() as executor:
+                 # Map the function over the points
+                #    freq_im = list(executor.map(compute_rad_p, NTindices))
+
+                (freq_im, _, _) = gme.compute_rad(0,NTindices)
+
+                datatosave = {'time':t_tot,'gmax':g,'cavity':c,'size':s,
+                            'indices':NTindices.tolist(),'freqs':(266/gme.freqs[0,minI:maxI]).tolist(),
+                            'Q':(gme.freqs[0,minI:maxI]/(2*freq_im)).tolist()}
+            
+                data = read_data(json_path)
+                data.append(datatosave)
+                write_data(json_path, data)
+
+                #generate a list of dictionaries fro the arguments
+                #calls = []
+                #for i in NTindices:
+                #    args = {'args': [phc,gme],'kwargs': {'gapIndex': i,'resolution':200,'title':f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={g}',
+                #                                          'cbarShow':False,'save':True,'path':f'results/convTest/cavity{s}{c}{int(g*100)}/cavity{i}.png'}}
+                #    calls.append(args)
+
+                #save plots
+                if plot:
+                    plot_path = file_path + f'/cavity{s}{c}{int(g*100)}'
+                    os.makedirs(plot_path, exist_ok=True)
+                    for i in NTindices:
+                        plot(phc,gme,gapIndex=i,resolution=res,title=f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={np.round(g,2)}',cbarShow=False,save=True,path=plot_path+f'/{i}')
+
