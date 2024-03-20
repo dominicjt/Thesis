@@ -74,20 +74,20 @@ def rungme(phc,kpoints,gmax=0,options={},**kwargs):
     return(gme)
 
 #compute Q by averaging over k-grid
-def compQ(gme,kpoints,Nx=0,Ny=0,**kwargs):
+def compQ(gme,kpoints,optMode=0,**kwargs):
     avg = 0
     for ik in range(kpoints[0,:].size):
-        (freq_im, _, _) = gme.compute_rad(0, [Nx*Ny])
-        avg += gme.freqs[ik,Nx*Ny]/(2*freq_im[0])
+        (freq_im, _, _) = gme.compute_rad(0, [optMode])
+        avg += gme.freqs[ik,optMode]/(2*freq_im[0])
     Q = avg/kpoints[0,:].size
     return(Q)
 
 #compute V averaged over the k-grid 
 #legume automatically normalizes fields so they integrate to uniy so intigral is not computed
-def compV(gme,kpoints,Nx=0,Ny=0,**kwargs):
+def compV(gme,kpoints,optMode=0,**kwargs):
     V = 0
     for ik in range(kpoints[0,:].size):
-        field = gme.get_field_xy('e', kind=ik, mind=Nx*Ny, z=0, component='xyz', Nx=100, Ny=100)[0]
+        field = gme.get_field_xy('e', kind=ik, mind=optMode, z=0, component='xyz', Nx=100, Ny=100)[0]
         eps = gme.get_eps_xy(0)
         fieldAbs = npa.abs(field['x'])**2+npa.abs(field['y'])**2+npa.abs(field['z'])**2
         maxfield = npa.max(fieldAbs*eps)
@@ -97,7 +97,7 @@ def compV(gme,kpoints,Nx=0,Ny=0,**kwargs):
 
 #Q running of GME. Have callback built in
 @functools.lru_cache(maxsize=20) #cashes the inputs and outputs (causes a problem, look to legume docs for correct way)
-def of_Q(params,Nx=0,Ny=0,**kwargs):
+def of_Q(params,Nx=0,Ny=0,optMode=0,**kwargs):
 
     #inputs are made into tuples and expanded inorder to cache them, 
     #we now decode them. incoding found at costWrapper in this file
@@ -117,17 +117,17 @@ def of_Q(params,Nx=0,Ny=0,**kwargs):
 
     #get the frequency of the first k-point. assume they are all equal 
     #as they should be with sufficent lattice size
-    freq = gme.freqs[0,Nx*Ny]
+    freq = gme.freqs[0,optMode]
 
     #compute the Q factor 
-    Q = compQ(gme,kpoints,Nx=Nx,Ny=Ny,**kwargs)
+    Q = compQ(gme,kpoints,optMode=optMode,**kwargs)
     
     # We put a negative sign because we use in-built methods to *minimize* the objective function
     return -Q,freq
 
 #V running of GME. Have callback built in
 @functools.lru_cache(maxsize=20) #cashes the inputs and outputs
-def of_V(params,Nx=0,Ny=0,**kwargs):
+def of_V(params,Nx=0,Ny=0,optMode=0,**kwargs):
 
     #inputs are made into tuples and expanded inorder to cache them, 
     #we now decode them. incoding found at costWrapper in this file
@@ -147,10 +147,10 @@ def of_V(params,Nx=0,Ny=0,**kwargs):
 
     #get the frequency of the first k-point. assume they are all equal 
     #as they should be with sufficent lattice size
-    freq = gme.freqs[0,Nx*Ny]
+    freq = gme.freqs[0,optMode]
 
     #compute the mode volsume  
-    V = compV(gme,kpoints,Nx=0,Ny=0,**kwargs)
+    V = compV(gme,kpoints,optMode=optMode,**kwargs)
 
     #return V since it is being minized
     return V,freq
@@ -158,7 +158,7 @@ def of_V(params,Nx=0,Ny=0,**kwargs):
 
 #Q/V running of GME. Have callback built in
 @functools.lru_cache(maxsize=20) #cashes the inputs and outputs
-def of_QV(params,Nx=0,Ny=0,**kwargs):
+def of_QV(params,Nx=0,Ny=0,optMode=0,**kwargs):
 
     #inputs are made into tuples and expanded inorder to cache them, 
     #we now decode them. incoding found at costWrapper in this file
@@ -178,13 +178,13 @@ def of_QV(params,Nx=0,Ny=0,**kwargs):
 
     #get the frequency of the first k-point. assume they are all equal 
     #as they should be with sufficent lattice size
-    freq = gme.freqs[0,Nx*Ny]
+    freq = gme.freqs[0,optMode]
 
     #compute the Q factor 
-    Q = compQ(gme,kpoints,Nx=0,Ny=0,**kwargs)
+    Q = compQ(gme,kpoints,optMode=optMode,**kwargs)
 
     #compute the mode volume
-    V = compV(gme,kpoints,Nx=0,Ny=0,**kwargs)
+    V = compV(gme,kpoints,optMode=optMode,**kwargs)
 
     #trying to maximize it so we put a minus sign in front
     return -Q/V,freq

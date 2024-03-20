@@ -114,7 +114,7 @@ options = {'verbose': False}
 defaults = {'dx': {}, 'dy': {}, 'dr': {},'Nx': 16, 'Ny': 10, 'dslab': 0.6, 'n_slab': 12,'ra': 0.29,
             'gmax': 2, 'options': options, 'method': 'l-bfgs-b', 'objective_function': of_Q, 'nk':1,
             'bounds': None, 'constraints': None , 'gradients': 'exact', 'compute_im': False, 'callback': None,
-            'constraints':False,'constFunc':None,'minFreq':0,'maxfreq':1000,'minrad':0,'mindist':0}
+            'constraints':False,'constFunc':None,'minFreq':0,'maxfreq':1000,'minrad':0,'mindist':0,"optMode":0}
 
 # Function to add default values from the 'defaults' dictionary to 'metadata'
 def add_missing_defaults(metadata):
@@ -184,7 +184,7 @@ def experiment(data,process):
         metadata['callback'] = metadata['callback'].callback
 
         #change the values of options to allgn with computation
-        metadata['options']['numeig'] = metadata['Nx']*metadata['Ny']+1
+        metadata['options']['numeig'] = metadata['optMode']+1
         metadata['options']['gradients'] = metadata['gradients']
         metadata['options']['compute_im'] = metadata['compute_im']
 
