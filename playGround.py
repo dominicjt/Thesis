@@ -186,3 +186,9 @@ for d in dataold:
 plt.xlim(1021,1028)
 plt.show()
 # %%
+phc, lattice = TopoCav(sideLength=21,Nx=44,Ny=44)
+pwe = legume.PlaneWaveExp(phc.layers[0],gmax=7)
+legume.viz.eps_ft(pwe,figsize=(10,10))
+# %%
+print(phc.layers[0])
+# %%
