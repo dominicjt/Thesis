@@ -1,5 +1,5 @@
 #%%
-from defineCrystal import TopoCav
+from defineCrystal import TopoCav, LNCrystal
 import legume 
 import numpy as np
 import time 
@@ -103,10 +103,10 @@ for i, s in enumerate(size):
             
 
 # %%
-#data2 = read_data("results/convTest/dataSecond.json")
-#data1 = read_data("results/convTest/dataFirst.json")
-#data3 = read_data("results/convTest/data.json")
-#data = np.array(data1+data2+data3)
+data2 = read_data("results/convTest/dataSecond.json")
+data1 = read_data("results/convTest/dataFirst.json")
+data3 = read_data("results/convTest/data.json")
+dataold = np.array(data1+data2+data3)
 data = np.array(read_data("results/gmaxTest/gmaxTest.json"))
 
 #%%
@@ -138,6 +138,51 @@ plt.title(f"size = {size}, cavity = {cavity}")
 plt.show()
 # %%
 for d in data:
+    if d['gmax']==1.75:
+        plt.scatter(d['NTwavelength'],d['Q'])
+plt.xlim(1015,1029)
+plt.show()
+#%%
+for d in data:
     plt.scatter(d['gmax'],d['time'])
+plt.show()
+# %%
+data2 = read_data("results/freqConfine/trust-constrBig.json")['iterations']
+for key,value in data2.items():
+    plt.scatter(int(key),-value['value'])
+    #plt.scatter(int(key),value['freq'])
+plt.yscale('log')
+plt.show()
+# %%
+import ast
+dx1 = data2['205']['dx']
+dy1 = data2['205']['dy']
+dr1 = data2['205']['dr']
+
+dx={};dy={};dr={}
+for key,value in dx1.items():
+    dx[ast.literal_eval(key)] = value
+
+for key,value in dy1.items():
+    dy[ast.literal_eval(key)] = value
+
+for key,value in dr1.items():
+    dr[ast.literal_eval(key)] = value
+
+phc = LNCrystal(Nx=16,Ny=10,dslab=.6,n_slab=12,ra=.29,dx=dx,dy=dy,dr=dr)
+legume.viz.eps_xy(phc)
+optoins = {'verbose':False,'numeig':161,'compute_im':False}
+gme = legume.GuidedModeExp(phc,gmax=2)
+gme.run(kpoints=np.array([[0],[0]]),**options)
+(freq_im,_,_) = gme.compute_rad(0,[160])
+# %%
+fieldPlot(phc,gme,gapIndex=160,resolution=200,cbarShow=False)
+# %%
+print('Q=',gme.freqs[0,160]/(2*freq_im[0]))
+# %%
+for d in dataold:
+    if d["gmax"]==1.5 and d["cavity"]==21:
+        plt.scatter(d["NTwavelength"],np.ones_like(d["NTwavelength"])*d["size"])
+plt.xlim(1021,1028)
 plt.show()
 # %%
