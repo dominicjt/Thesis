@@ -4,7 +4,7 @@ import numpy as np
 #dx, dy, and dr are dictionaries: {(coordiante):offset,...}
 
 #function that defines the L3 crystal caity structure with various parameters
-def L3Crystal(Nx=0,Ny=0,dx={},dy={},dr={},dslab=0,n_slab=0,ra=0,nxbigger=0,nybigger=0,**kwargs):
+def L3Crystal(Nx=0,Ny=0,dx={},dy={},dr={},dslab=.6,n_slab=12,ra=.29,nxbigger=0,nybigger=0,**kwargs):
 
     #Define the lattice and crystal
     lattice = legume.Lattice([Nx, 0], [0, Ny*np.sqrt(3)/2])
@@ -99,6 +99,7 @@ def TopoCav(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11.6,r
     r0 = ra1
     #set up lattice
     lattice = legume.Lattice([Nx, 0], [0, Ny*np.sqrt(3)/2])
+    #lattice = legume.Lattice([.5*Nx, -Ny*np.sqrt(3)/2], [.5*Nx, Ny*np.sqrt(3)/2]) #this might be causing issues, should use this 
     phc = legume.PhotCryst(lattice)
     phc.add_layer(d=dslab, eps_b=n_slab)
 

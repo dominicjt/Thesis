@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
-from defineCrystal import TopoCav
+from defineCrystal import TopoCav, L3Crystal
 import json
 import time
 import os
@@ -195,56 +195,45 @@ def fieldPlotS3(phc,gme,gapIndex=0,kIndex=0,field='E',resolution=100,title='',cb
     return(gapIndex,kIndex)
 
 #this function is for running convergance testing
-def convergance(size,gmax,cavity,file_path,minfreq,maxfreq,kpoints=np.array([[0],[0]]),plot=False,res=200):
+def convergance(size,gmax,cavity,guidedModes,file_path,minfreq,maxfreq,kpoints=np.array([[0],[0]]),plot=False,res=200):
     json_path = file_path+"/data.json"
     # Loop through each array
     for i, s in enumerate(size):
         for j, g in enumerate(gmax):
             for k, c in enumerate(cavity):
-
-                options = {'verbose': False, 'gradients': 'approx',
-                           'numeig': s*s+200,       # get 5 eigenvalues
-                           'compute_im': False
-                        }
+                for l, gm in enumerate(guidedModes):
+                    options = {'verbose': False, 'gradients': 'approx',
+                               'numeig': s*s+20,       # get 5 eigenvalues
+                               'compute_im': False,
+                               'gmode_inds': gm,
+                            }
             
-                #run simulation
-                t = time.time()
-                phc, lattice = TopoCav(sideLength=c,Nx=s,Ny=s)
-                gme = legume.GuidedModeExp(phc, gmax=g)
-                gme.run(kpoints=kpoints, **options)
-                t_tot = time.time()-t
+                    #run simulation
+                    t = time.time()
+                    phc, lattice = L3Crystal(Nx=s,Ny=s)
+                    gme = legume.GuidedModeExp(phc, gmax=g)
+                    gme.run(kpoints=kpoints, **options)
+                    t_tot = time.time()-t
             
-                NTindices = np.where((gme.freqs[0] > minfreq) & (gme.freqs[0] < maxfreq))[0]
-                minI = NTindices[0]
-                maxI = NTindices[-1]+1
+                    #NTindices = np.where((gme.freqs[0] > minfreq) & (gme.freqs[0] < maxfreq))[0]
+                    #minI = NTindices[0]
+                    #maxI = NTindices[-1]+1
+                    NTindices = np.arange(10)+s*s
 
-                #attempting multithredding is to memory intensive
-                # Using ThreadPoolExecutor to parallelize the computation
-                #with concurrent.futures.ThreadPoolExecutor() as executor:
-                 # Map the function over the points
-                #    freq_im = list(executor.map(compute_rad_p, NTindices))
+                    (freq_im, _, _) = gme.compute_rad(0,NTindices)
 
-                (freq_im, _, _) = gme.compute_rad(0,NTindices)
-
-                datatosave = {'time':t_tot,'gmax':g,'cavity':c,'size':s,
-                            'indices':NTindices.tolist(),'freqs':(266/gme.freqs[0,minI:maxI]).tolist(),
-                            'Q':(gme.freqs[0,minI:maxI]/(2*freq_im)).tolist()}
+                    datatosave = {'time':t_tot,'gmax':g,'cavity':c,'size':s,'gmode_ins':gm,'planeWaves':int(gme.n1g*gme.n2g),
+                            'indices':NTindices.tolist(),'freqs':(420/gme.freqs[0,NTindices[0]:NTindices[-1]+1]).tolist(),
+                            'Q':(gme.freqs[0,NTindices[0]:NTindices[-1]+1]/(2*freq_im)).tolist()}
             
-                data = read_data(json_path)
-                data.append(datatosave)
-                write_data(json_path, data)
+                    data = read_data(json_path)
+                    data.append(datatosave)
+                    write_data(json_path, data)
 
-                #generate a list of dictionaries fro the arguments
-                #calls = []
-                #for i in NTindices:
-                #    args = {'args': [phc,gme],'kwargs': {'gapIndex': i,'resolution':200,'title':f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={g}',
-                #                                          'cbarShow':False,'save':True,'path':f'results/convTest/cavity{s}{c}{int(g*100)}/cavity{i}.png'}}
-                #    calls.append(args)
-
-                #save plots
-                if plot:
-                    plot_path = file_path + f'/cavity{s}{c}{int(g*100)}'
-                    os.makedirs(plot_path, exist_ok=True)
-                    for i in NTindices:
-                        plot(phc,gme,gapIndex=i,resolution=res,title=f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={np.round(g,2)}',cbarShow=False,save=True,path=plot_path+f'/{i}')
+                    #save plots
+                    if plot:
+                        plot_path = file_path + f'/cavity{s}{c}{int(g*100)}{len(guidedModes)}'
+                        os.makedirs(plot_path, exist_ok=True)
+                        for i in NTindices:
+                            plot(phc,gme,gapIndex=i,resolution=res,title=f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={np.round(g,2)}',cbarShow=False,save=True,path=plot_path+f'/{i}')
 
