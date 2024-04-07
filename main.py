@@ -83,7 +83,7 @@ dr = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
 runs = {'name':'freqConfine',
         #'lbfgsbBig': {'dx':dx,'dy':dy,'dr':dr,'method':'l-bfgs-b'},
         'trust-constrBig_QV': {'dx':dx,'dy':dy,'dr':dr,'method':'trust-constr','constraints':True,'minrad':.05,'mindist':.05,
-                         'minfreq':.261,'maxfreq':.3,'constFunc':L3const,'objective_function': of_QV,'gmax':1.5}}
+                         'minfreq':.261,'maxfreq':.28,'constFunc':L3const,'objective_function': of_QV,'gmax':1.5,'optMode':160}}
 
 experiment(runs,ID)
 # %%

@@ -21,7 +21,7 @@ def L3const(minfreq=0,maxfreq=1000,minrad=0,mindist=0,dx={},dy={},dr={},ra=.25,o
 
     #generate constraints for the radius 
     for key, i in dr.items():
-        constFunc = lambda x,i=i: x[i]-minrad
+        constFunc = lambda x,i=i: x[i]-minrad+ra
         constraints.append({'type':'ineq','fun':constFunc})
 
     #generate constraints that hold the holes in their unit cell

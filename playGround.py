@@ -271,6 +271,16 @@ for d in dataL3:
 plt.xlabel(r'Frequency [$\omega a/2\pi c$]')
 plt.ylabel('Plane Waves')
 plt.show()
+
+for d in dataL3:
+    if d['size']==16 and len(d['gmode_ins'])==1:
+        plt.scatter(d["planeWaves"],d['time'],color="blue",edgecolors="black",s=200)
+plt.xlabel('PlaneWave')
+plt.ylabel('Time [s]')
+plt.show()
+
+
+
 # %%
 dataL3 = read_data("results/L3Test/data.json")
 # Define the colormap
@@ -298,6 +308,13 @@ for d in dataL3:
 plt.xlabel(r'Frequency [$\omega a/2\pi c$]')
 plt.ylabel('Size')
 plt.show()
+
+for d in dataL3:
+    if d['gmax']==2 and len(d['gmode_ins'])==1:
+        plt.scatter(d["size"],d['time'],color="blue",edgecolors="black",s=200)
+plt.xlabel('Size')
+plt.ylabel('Time [s]')
+plt.show()
 #%%
 dataL3 = read_data("results/L3Test/data.json")
 # Define the colormap
@@ -322,7 +339,58 @@ cbar = plt.colorbar(scatter, format='${%d}$')
 cbar.set_ticks([1e2, 1e3, 1e4])  # Setting ticks for the colorbar
 cbar.set_ticklabels(['$10^2$', '$10^3$', '$10^4$'])  # Setting custom tick labels
 cbar.set_label('Quality Factor')
+plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
 plt.xlabel(r'Frequency [$\omega a/2\pi c$]')
 plt.ylabel('Guided Modes')
 plt.show()
+
+for d in dataL3:
+    if d['gmax']==2 and d['size']==16:
+        plt.scatter(len(d["gmode_ins"]),d['time'],color="blue",edgecolors="black",s=200)
+plt.xlabel('Guided Modes')
+plt.ylabel('Time [s]')
+plt.show()
+# %%
+dataL3QV = read_data("results/freqConfine/trust-constrBig_QV.json")['iterations']
+for d,v in dataL3QV.items():
+    plt.scatter(int(d),-v['value'])
+# %%
+import ast
+dx1 = dataL3QV['531']['dx']
+dy1 = dataL3QV['531']['dy']
+dr1 = dataL3QV['531']['dr']
+
+dx={};dy={};dr={}
+for key,value in dx1.items():
+    dx[ast.literal_eval(key)] = value
+
+for key,value in dy1.items():
+    dy[ast.literal_eval(key)] = value
+
+for key,value in dr1.items():
+    dr[ast.literal_eval(key)] = value
+
+phc,_ = LNCrystal(Nx=16,Ny=10,dslab=.6,n_slab=12,ra=.29,dx=dx,dy=dy,dr=dr)
+#legume.viz.eps_xy(phc)
+optoins = {'verbose':False,'numeig':161,'compute_im':False}
+gme = legume.GuidedModeExp(phc,gmax=1.5)
+gme.run(kpoints=np.array([[0],[0]]),**optoins)
+#(freq_im,_,_) = gme.compute_rad(0,[160])
+# %%
+fieldPlot(phc,gme,gapIndex=160,resolution=100,cbarShow=False)
+# %%
+xs = []
+ys = []
+rs = []
+for d,v in dataL3QV.items():
+    xs.append(list(v['dx'].values()))
+    ys.append(list(v['dy'].values()))
+    rs.append(list(v['dr'].values()))
+
+xs = np.array(xs);ys = np.array(ys); rs = np.array(rs)
+plt.plot(np.sqrt(xs**2+ys**2))
+plt.show()
+plt.plot(rs)
+plt.show()
+print(rs.shape)
 # %%

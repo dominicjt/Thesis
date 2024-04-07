@@ -168,7 +168,6 @@ def of_QV(params,Nx=0,Ny=0,optMode=0,crystal=None,**kwargs):
 
     #do the cavity simulation
     phc,_ = crystal(Nx=Nx,Ny=Ny,dx=dx,dy=dy,dr=dr,**kwargs)
-    legume.viz.eps_xy(phc)
     #get the k points 
     kpoints = kgrid(Nx=Nx,Ny=Ny,**kwargs)
     
