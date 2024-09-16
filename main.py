@@ -11,12 +11,12 @@ from process import fieldPlot, convergance
 os.environ['MKL_NUM_THREADS'] = '36'
 os.environ['MKL_DYNAMIC'] = 'FALSE'
 #%%
-# size = [10,12,14,16,18,20,22,24]
-# gmaxs = np.linspace(1,2,11)
-# cavity = [21]
-# guidedModes = [[0],[0,2],[0,2,4]]
+# size = [24]
+# gmaxs = np.linspace(1,4,22)
+# cavity = [7,9,11]
+# guidedModes = [[0]]
 
-# convergance(size,gmaxs,cavity,guidedModes,'results/L3Test',266/1028,266/1015)
+# convergance(size,gmaxs,cavity,guidedModes,'results/triConv2',266/1040,266/980)
 
 
 #%%
@@ -62,28 +62,38 @@ os.environ['MKL_DYNAMIC'] = 'FALSE'
 
 #this is the large optomization of the L3 cavity
 #now run optomization 
-from saveLoad import experiment
-from inverseDesign import ID
-from genConst import L3const
-import os
+# from saveLoad import experiment
+# from inverseDesign import ID
+# from genConst import L3const
+# import os
 
 
-dx = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
-      (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
-      (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
+# dx = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
+#       (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
+#       (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
 
-dy = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
-      (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
-      (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
+# dy = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
+#       (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
+#       (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
 
-dr = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
-      (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
-      (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
+# dr = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
+#       (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
+#       (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
 
-runs = {'name':'freqConfine',
-        #'lbfgsbBig': {'dx':dx,'dy':dy,'dr':dr,'method':'l-bfgs-b'},
-        'trust-constrBig_QV': {'dx':dx,'dy':dy,'dr':dr,'method':'trust-constr','constraints':True,'minrad':.05,'mindist':.05,
-                         'minfreq':.261,'maxfreq':.28,'constFunc':L3const,'objective_function': of_QV,'gmax':1.5,'optMode':160}}
+# runs = {'name':'WeBack',
+#         'lbfgsbBig': {'dx':dx,'dy':dy,'dr':dr,'method':'l-bfgs-b'},
+#         'trust-constrBig_Q': {'dx':dx,'dy':dy,'dr':dr,'method':'trust-constr','constraints':True,'minrad':.05,'mindist':.05,
+#                          'minfreq':.261,'maxfreq':.28,'constFunc':L3const,'objective_function': of_Q,'gmax':1.5,'optMode':160}}
 
-experiment(runs,ID)
+# experiment(runs,ID)
 # %%
+from process import NoiseTest
+from defineCrystal import TopoCav
+from process import bands
+
+phc,_ = TopoCav(Nx=40,Ny=40,sideLength=21)
+
+NoiseTest(phc,bands,noiseSTD=.015,nruns=20,path='results/noise/topoConv/t1.json',gmax=1.5,maxMode=2000)
+NoiseTest(phc,bands,noiseSTD=.01,nruns=20,path='results/noise/topoConv/t2.json',gmax=1.5,maxMode=2000)
+NoiseTest(phc,bands,noiseSTD=.005,nruns=20,path='results/noise/topoConv/t3.json',gmax=1.5,maxMode=2000)
+NoiseTest(phc,bands,noiseSTD=.001,nruns=20,path='results/noise/topoConv/t4.json',gmax=1.5,maxMode=2000)

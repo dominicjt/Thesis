@@ -219,7 +219,7 @@ def TopoCrystal(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11
 def TopoWave(Nx=1,Ny=0,dx={},dy={},dr={},dslab=.571,n_slab=12.04,r1=.105,r0=.235,nxbigger=0,nybigger=0,**kwargs):
 
     #set up lattice
-    lattice = legume.Lattice([Nx, 0], [0, Ny*np.sqrt(3)/2])
+    lattice = legume.Lattice([Nx, 0], [0, Ny*np.sqrt(3)/2-.25])
     phc = legume.PhotCryst(lattice)
     phc.add_layer(d=dslab, eps_b=n_slab)
 

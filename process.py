@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
-from defineCrystal import TopoCav, L3Crystal
+from defineCrystal import TopoCav
 import json
 import time
 import os
 import legume
+import copy
 
 # Function to read existing data from JSON file
 def read_data(file_path):
@@ -202,29 +203,29 @@ def convergance(size,gmax,cavity,guidedModes,file_path,minfreq,maxfreq,kpoints=n
         for j, g in enumerate(gmax):
             for k, c in enumerate(cavity):
                 for l, gm in enumerate(guidedModes):
+
                     options = {'verbose': False, 'gradients': 'approx',
-                               'numeig': s*s+20,       # get 5 eigenvalues
+                               'numeig': s*s*2,       # get 5 eigenvalues
                                'compute_im': False,
-                               'gmode_inds': gm,
+                               'gmode_inds': gm
                             }
             
                     #run simulation
                     t = time.time()
-                    phc, lattice = L3Crystal(Nx=s,Ny=s)
+                    phc, lattice = TopoCav(sideLength=c,Nx=s,Ny=s)
                     gme = legume.GuidedModeExp(phc, gmax=g)
                     gme.run(kpoints=kpoints, **options)
                     t_tot = time.time()-t
             
-                    #NTindices = np.where((gme.freqs[0] > minfreq) & (gme.freqs[0] < maxfreq))[0]
-                    #minI = NTindices[0]
-                    #maxI = NTindices[-1]+1
-                    NTindices = np.arange(10)+s*s
+                    NTindices = np.where((gme.freqs[0] > minfreq) & (gme.freqs[0] < maxfreq))[0]
+                    minI = NTindices[0]
+                    maxI = NTindices[-1]+1
 
                     (freq_im, _, _) = gme.compute_rad(0,NTindices)
 
                     datatosave = {'time':t_tot,'gmax':g,'cavity':c,'size':s,'gmode_ins':gm,'planeWaves':int(gme.n1g*gme.n2g),
-                            'indices':NTindices.tolist(),'freqs':(420/gme.freqs[0,NTindices[0]:NTindices[-1]+1]).tolist(),
-                            'Q':(gme.freqs[0,NTindices[0]:NTindices[-1]+1]/(2*freq_im)).tolist()}
+                            'indices':NTindices.tolist(),'freqs':(266/gme.freqs).tolist(),
+                            'Q':(gme.freqs[0,minI:maxI]/(2*freq_im)).tolist()}
             
                     data = read_data(json_path)
                     data.append(datatosave)
@@ -237,3 +238,36 @@ def convergance(size,gmax,cavity,guidedModes,file_path,minfreq,maxfreq,kpoints=n
                         for i in NTindices:
                             plot(phc,gme,gapIndex=i,resolution=res,title=f'Wavelength = {np.round(266/gme.freqs[0,i],2)}, size={s}\ncavity={c}, gmax={np.round(g,2)}',cbarShow=False,save=True,path=plot_path+f'/{i}')
 
+
+#Noise testing. This functlist to store data ion evaluates some parameter as the hole x,y locatoins
+#are randomaly perturbed by pulling noise from a gaussain distributoin
+def NoiseTest(phc,func,noiseSTD=.05,nruns=100,path='',**kwargs):
+
+    #initalize json file to store data
+    with open(path,'w') as file:
+        json.dump([],file)
+    
+    for i in range(nruns):
+        #make a copy of the crystal to add noise to 
+        phcNoisy = copy.deepcopy(phc)
+        for shape in phcNoisy.layers[0].shapes:
+            shape.x_cent += np.random.normal(0,noiseSTD) 
+            shape.y_cent += np.random.normal(0,noiseSTD) 
+        
+        #add the new data to the dictionary
+        with open(path,'r') as file:
+            data = json.load(file)
+        data.append(func(phcNoisy,**kwargs))
+        with open(path,'w') as file:
+            json.dump(data,file,indent=4)
+
+def Q(phc,gmax=1.5,optMode=0):
+    gme = legume.GuidedModeExp(phc,gmax=gmax)
+    gme.run(kpoints=np.array([[0],[0]]),numeig=optMode+1)
+    (freq_im,_,_)=gme.compute_rad(0,[optMode])
+    return([gme.freqs[0,optMode]/(2*freq_im[0]),gme.freqs[0,optMode]])
+        
+def bands(phc,gmax=1,maxMode=2000):
+    gme = legume.GuidedModeExp(phc,gmax=gmax)
+    gme.run(kpoints=np.array([[0],[0]]),numeig=maxMode,compute_im=False)
+    return(gme.freqs[0].tolist())
