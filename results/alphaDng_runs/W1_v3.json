@@ -1,0 +1,85 @@
+{
+    "metadata": {
+        "dx": {
+            "(0, 0)": 0,
+            "(0, 1)": 0,
+            "(0, 2)": 0,
+            "(0, 3)": 0,
+            "(0, -1)": 0,
+            "(0, -2)": 0,
+            "(0, -3)": 0
+        },
+        "dy": {
+            "(0, 0)": 0,
+            "(0, 1)": 0,
+            "(0, 2)": 0,
+            "(0, 3)": 0,
+            "(0, -1)": 0,
+            "(0, -2)": 0,
+            "(0, -3)": 0
+        },
+        "dr": {
+            "(0, 0)": 0,
+            "(0, 1)": 0,
+            "(0, 2)": 0,
+            "(0, 3)": 0,
+            "(0, -1)": 0,
+            "(0, -2)": 0,
+            "(0, -3)": 0
+        },
+        "Nx": 1,
+        "Ny": 30,
+        "dslab": 0.6390977443609023,
+        "n_slab": 11.99791044,
+        "ra": 0.3,
+        "gmax": 2,
+        "method": "trust-constr",
+        "objective_function": "of_alphaDng",
+        "nk": 1,
+        "bounds": null,
+        "gradients": "exact",
+        "compute_im": false,
+        "callback": "callback",
+        "constraints": true,
+        "constFunc": "W1const",
+        "minfreq": 0.26,
+        "maxfreq": 0.28,
+        "minrad": 0.10338345864661654,
+        "mindist": 0.15037593984962405,
+        "optMode": 30,
+        "crystal": "W1",
+        "kpoints": [
+            [
+                2.0943951023931953,
+                0.0
+            ],
+            [
+                [
+                    1.832595714594046,
+                    0.0
+                ]
+            ],
+            [
+                [
+                    2.748893571891069,
+                    0.0
+                ],
+                [
+                    3.141592653589793,
+                    0.0
+                ]
+            ]
+        ],
+        "a": 266,
+        "options": {
+            "verbose": false,
+            "numeig": 31,
+            "gradients": "exact",
+            "compute_im": false
+        },
+        "minFreq": 0,
+        "sidelength": 0
+    },
+    "results": {},
+    "iterations": {}
+}

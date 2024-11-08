@@ -7,6 +7,7 @@ from inverseDesign import placeParams
 from inverseDesign import costWrapper
 from genConst import L3const
 from defineCrystal import L3Crystal
+import copy
 
 #convert one dictionary
 def convert_keys_to_string(original_dict):
@@ -77,7 +78,7 @@ class callbackFunction:
     def callback(self,params,*args,**kwargs):
         
         #get the optimal value
-        value,freq = costWrapper(params,objective_function=self.objective_function,returnFreq=True,dx=self.dx,dy=self.dy,dr=self.dr, **self.kwargs)
+        value,freq,extra = costWrapper(params,objective_function=self.objective_function,returnExtra=True,dx=self.dx,dy=self.dy,dr=self.dr, **self.kwargs)
 
         #output something so we know where we are at
         print(self.iteration,': ',value)
@@ -89,7 +90,7 @@ class callbackFunction:
         dx,dy,dr = convert_keys_in_dict_list([dx,dy,dr])
 
         #format the data
-        step = {'value':value, 'freq':freq, 'dx':dx, 'dy':dy, 'dr':dr}
+        step = {'value':value, 'freq':freq, 'other':extra, 'dx':dx, 'dy':dy, 'dr':dr}
 
         # Read existing data
         with open(self.filepath, 'r') as file:
@@ -116,7 +117,7 @@ defaults = {'dx': {}, 'dy': {}, 'dr': {},'Nx': 16, 'Ny': 10, 'dslab': 0.6, 'n_sl
             'gmax': 2, 'options': options, 'method': 'l-bfgs-b', 'objective_function': of_Q, 'nk':1,
             'bounds': None, 'constraints': None , 'gradients': 'exact', 'compute_im': False, 'callback': None,
             'constraints':False,'constFunc':None,'minFreq':0,'maxfreq':1000,'minrad':0,'mindist':0,"optMode":0,
-            'crystal':L3Crystal,'sidelength':0}
+            'crystal':L3Crystal,'sidelength':0,'kpoints':None,'bandwidth':0}
 
 # Function to add default values from the 'defaults' dictionary to 'metadata'
 def add_missing_defaults(metadata):
@@ -163,7 +164,7 @@ def experiment(data,process):
             jsondata['metadata'] = {}
             jsondata['results'] = {}
             jsondata['iterations'] = {}
-
+    
         # Write the changes or new data back to the file
         with open(file_path, 'w') as file:
             json.dump(jsondata, file, indent=4)
@@ -173,12 +174,6 @@ def experiment(data,process):
 
         # Add missing defaults to the metadata before processing
         metadata = add_missing_defaults(metadata)
-
-        #if constraints=True then generate constraints, else make it None
-        if metadata['constraints'] == True:
-            metadata['constraints'] = metadata['constFunc'](**metadata)
-        else:
-            metadata['constraints'] = None
 
         #add to the parameters to the callback function class and then replace callback instance with funciton
         metadata['callback'] = callbackFunction()
@@ -191,28 +186,45 @@ def experiment(data,process):
         metadata['options']['compute_im'] = metadata['compute_im']
 
         #if constraints=True then generate constraints, else make it None
-        if metadata['constraints']:
-            metadata['constraints'] = metadata['constFunc'](**metadata)
+        if metadata['constraints'] == True:
+            metadata['constraints'] = metadata['constFunc'](**copy.deepcopy(metadata))
         else:
             metadata['constraints'] = None
+
+        #save before running
+        metadata_toSave = copy.deepcopy(metadata)
+
+        #convert dict tupples to strings
+        metadata_toSave['dx'],metadata_toSave['dy'],metadata_toSave['dr'] = convert_keys_in_dict_list([metadata_toSave['dx'],metadata_toSave['dy'],metadata_toSave['dr']])
+
+        #convert the funciton parameter to just a name of a function
+        metadata_toSave['objective_function'] = metadata_toSave['objective_function'].__name__
+        metadata_toSave['callback'] = metadata_toSave['callback'].__name__
+        metadata_toSave['crystal'] = metadata_toSave['crystal'].__name__
+
+        #convert constraints to simple true false
+        if metadata_toSave['constraints'] != None:
+            metadata_toSave['constraints'] = True
+        if metadata_toSave['constFunc'] != None:
+            metadata_toSave['constFunc'] = metadata_toSave['constFunc'].__name__
+
+        # write metadata to json before running sim
+        with open(file_path, 'r') as file:
+            jsondata = json.load(file)
+
+        #either add the itteration data or create the key word and add
+        jsondata['metadata'] = metadata_toSave
+
+        #write the file new data back to the json
+        with open(file_path, 'w') as file:
+            json.dump(jsondata, file, indent=4)
+
         # Process the data and add a 'results' entry to it
         results = process(**metadata)
 
         #convert dict tupples to strings
         metadata['dx'],metadata['dy'],metadata['dr'] = convert_keys_in_dict_list([metadata['dx'],metadata['dy'],metadata['dr']])
-
-        #convert the funciton parameter to just a name of a function
-        metadata['objective_function'] = metadata['objective_function'].__name__
-        metadata['callback'] = metadata['callback'].__name__
-        metadata['crystal'] = metadata['crystal'].__name__
-
-        #convert constraints to simple true false
-        if metadata['constraints'] != None:
-            metadata['constraints'] = True
-        if metadata['constFunc'] != None:
-            metadata['constFunc'] = metadata['constFunc'].__name__
         
-
         #convert results to something json can save 
         results =convert_optimize_result_to_jsonable(results)
 
@@ -221,7 +233,9 @@ def experiment(data,process):
             jsondata = json.load(file)
 
         #either add the itteration data or create the key word and add
-        jsondata['metadata'] = metadata
+        jsondata['metadata']['dx'] = metadata['dx']
+        jsondata['metadata']['dy'] = metadata['dy']
+        jsondata['metadata']['dr'] = metadata['dr']
         jsondata['results'] = results
 
         #write the file new data back to the json

@@ -216,12 +216,13 @@ def TopoCrystal(Nx=0,Ny=0,sideLength=7,dx={},dy={},dr={},dslab=170/266,n_slab=11
 
 
 #function that generates the crystal structure for the topological triangle cavity
-def TopoWave(Nx=1,Ny=0,dx={},dy={},dr={},dslab=.571,n_slab=12.04,r1=.105,r0=.235,nxbigger=0,nybigger=0,**kwargs):
+def TopoWave(Nx=1,Ny=0,dx={},dy={},dr={},dslab=.571,n_slab=12.04,ra=(.235,.105),nxbigger=0,nybigger=0,**kwargs):
 
     #set up lattice
     lattice = legume.Lattice([Nx, 0], [0, Ny*np.sqrt(3)/2-.25])
     phc = legume.PhotCryst(lattice)
     phc.add_layer(d=dslab, eps_b=n_slab)
+    r0,r1 = ra[0],ra[1]
 
     #for the start, lets just make the grid
     for iy in np.arange(Ny+1)-Ny//2:
@@ -251,10 +252,40 @@ def TopoWave(Nx=1,Ny=0,dx={},dy={},dr={},dslab=.571,n_slab=12.04,r1=.105,r0=.235
 
             if iy != -Ny//2+1:
                   #next is big holes, get the offset values and add circle
-                  bx = x+dx.get((ix,iy,0),0)
-                  by = y+dy.get((ix,iy,0),0)-np.sqrt(3)/3
-                  br = r1FC+dr.get((ix,iy,0),0)
+                  bx = x+dx.get((ix,iy,1),0)
+                  by = y+dy.get((ix,iy,1),0)-np.sqrt(3)/3
+                  br = r1FC+dr.get((ix,iy,1),0)
                   phc.add_shape(legume.Circle(x_cent=bx,y_cent=by,r=br))
 
     #return the crystal
     return(phc,lattice)
+
+
+#function that generates the crystal structure for W1 waveguide
+def W1(Nx=1,Ny=0,dx={},dy={},dr={},dslab=.571,n_slab=12.04,ra=.3,**kwargs):
+
+    #set up lattice
+    lattice = legume.Lattice([Nx, 0], [0, Ny*np.sqrt(3)/2])
+    phc = legume.PhotCryst(lattice)
+    phc.add_layer(d=dslab, eps_b=n_slab)
+
+    #for the start, lets just make the grid
+    for iy in np.arange(Ny)-Ny//2:
+        for ix in range(Nx):
+
+            #skip if it is the middle hole
+            if iy==0:
+                continue
+
+            #get hole coordinates and add hole
+            if iy%2==1:
+                x = ix + .5 + dx.get((ix,iy),0)
+            else:
+                x = ix + dx.get((ix,iy),0)
+            y = iy*np.sqrt(3)/2 + dy.get((ix,iy),0)
+            r = ra + dr.get((ix,iy),0)
+            phc.add_shape(legume.Circle(x_cent=x,y_cent=y,r=r))
+
+    #return the crystal
+    return(phc,lattice)
+

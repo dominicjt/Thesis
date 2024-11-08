@@ -62,38 +62,113 @@ os.environ['MKL_DYNAMIC'] = 'FALSE'
 
 #this is the large optomization of the L3 cavity
 #now run optomization 
-# from saveLoad import experiment
-# from inverseDesign import ID
-# from genConst import L3const
-# import os
+from saveLoad import experiment
+from inverseDesign import ID
+from genConst import TopoWavconstSingleMode, W1const
+from defineCrystal import TopoWave, W1
+import os
+import numpy as np 
+import json
+from inverseDesign import of_alphaDng
+os.environ['MKL_NUM_THREADS'] = '36'
+os.environ['MKL_DYNAMIC'] = 'FALSE'
 
+#toni's crystal
+a = 403 # nm, the lattice constant (pitch) of the crystal
+h = 270 # nm, the height (depth) of the slab
+r0, r1 = .105,.235  # nm, starting radii
 
-# dx = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
-#       (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
-#       (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
+nk = 25 # Number of k-points
+kmin, kmax = np.pi*.5, np.pi # Min and max k-values
+path = np.vstack((np.linspace(kmin, kmax, nk), np.zeros(nk))) #k vectors
+kpoints = (tuple(path[:,8]),(tuple(path[:,4]),tuple(path[:,6]),),(tuple(path[:,12]),tuple(path[:,16]),tuple(path[:,20]),))
 
-# dy = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
-#       (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
-#       (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
+dxW1 = {(0,0):0,(0,1):0,(0,2):0,(0,3):0,(0,-1):0,(0,-2):0,(0,-3):0}
 
-# dr = {(2,0):0,(3,0):0,(4,0):0,(-2,0):0,(-3,0):0,(-4,0):0,
-#       (0,1):0,(1,1):0,(2,1):0,(-1,1):0,(-2,1):0,(-3,1):0,
-#       (0,-1):0,(1,-1):0,(2,-1):0,(-1,-1):0,(-2,-1):0,(-3,-1):0}
+dyW1 = {(0,0):0,(0,1):0,(0,2):0,(0,3):0,(0,-1):0,(0,-2):0,(0,-3):0}
 
-# runs = {'name':'WeBack',
-#         'lbfgsbBig': {'dx':dx,'dy':dy,'dr':dr,'method':'l-bfgs-b'},
-#         'trust-constrBig_Q': {'dx':dx,'dy':dy,'dr':dr,'method':'trust-constr','constraints':True,'minrad':.05,'mindist':.05,
-#                          'minfreq':.261,'maxfreq':.28,'constFunc':L3const,'objective_function': of_Q,'gmax':1.5,'optMode':160}}
+drW1 = {(0,0):0,(0,1):0,(0,2):0,(0,3):0,(0,-1):0,(0,-2):0,(0,-3):0}
+
+with open('results/ForceParamTest/51000.1.json') as file:
+    data = json.load(file)['iterations']
+
+last = list(data.values())[509]
+
+dxF = {eval(key):value for key,value in last['dx'].items()}
+dyF = {eval(key):value for key,value in last['dy'].items()}
+drF = {eval(key):value for key,value in last['dr'].items()}
+
+dx = {**dxF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+dy = {**dyF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+dr = {**drF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+
+runs = {'name':'alphaDng_runs2',
+                  'W1Test':{'dx': dxW1, 'dy': dyW1, 'dr': drW1,'Nx': 1, 'Ny': 20, 'dslab': 170/266, 'n_slab': 3.4638**2,'ra': .3,
+                        'gmax': 2, 'method': 'trust-constr', 'objective_function': of_alphaDng, 'nk':1,
+                        'bounds': None, 'gradients': 'exact', 'compute_im': False, 'callback': None,
+                        'constraints':True,'constFunc':W1const,'minfreq':.27,'maxfreq':.28,'minrad':27.5/266,'mindist':40/266,"optMode":20,
+                        'crystal':W1,'kpoints':kpoints,'a':266,"bandwidth":.005}}
+                #   'BIWTest3': {'dx': dx, 'dy': dy, 'dr': dr,'Nx': 1, 'Ny': 21, 'dslab': 170/266, 'n_slab': 3.4638**2,'ra': (r0,r1),
+                #         'gmax': 2, 'method': 'trust-constr', 'objective_function': of_alphaDng, 'nk':1,
+                #         'bounds': None, 'gradients': 'exact', 'compute_im': False, 'callback': None,
+                #         'constraints':True,'constFunc':TopoWavconstSingleMode,'minfreq':.260,'maxfreq':.275,'minrad':27.5/266,'mindist':40/266,"optMode":20,
+                #         'crystal':TopoWave,'kpoints':kpoints,'a':266,"bandwidth":.005}}
+
+experiment(runs,ID)
+
+# with open('results/ForceParamTest/51000.1.json') as file:
+#     data = json.load(file)['iterations']
+
+# last = list(data.values())[200]
+
+# dxF = {eval(key):value for key,value in last['dx'].items()}
+# dyF = {eval(key):value for key,value in last['dy'].items()}
+# drF = {eval(key):value for key,value in last['dr'].items()}
+
+# dx = {**dxF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+# dy = {**dyF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+# dr = {**drF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+
+# runs = {'name':'alphaDng_runs',
+#                     'BIW_BW200': {'dx': dx, 'dy': dy, 'dr': dr,'Nx': 1, 'Ny': 21, 'dslab': 170/266, 'n_slab': 3.4638**2,'ra': (r0,r1),
+#                         'gmax': 2, 'method': 'trust-constr', 'objective_function': of_alphaDng, 'nk':1,
+#                         'bounds': None, 'gradients': 'exact', 'compute_im': False, 'callback': None,
+#                         'constraints':True,'constFunc':TopoWavconstSingleMode,'minfreq':.255,'maxfreq':.27,'minrad':27.5/266,'mindist':40/266,"optMode":20,
+#                         'crystal':TopoWave,'kpoints':(tuple(path[:,8]),(tuple(path[:,4]),),(tuple(path[:,18]),tuple(path[:,24]),)),'a':266,"bandwidth":.005},
+#                     'BIW_BW250_larger': {'dx': dx, 'dy': dy, 'dr': dr,'Nx': 1, 'Ny': 21, 'dslab': 170/266, 'n_slab': 3.4638**2,'ra': (r0,r1),
+#                         'gmax': 2, 'method': 'trust-constr', 'objective_function': of_alphaDng, 'nk':1,
+#                         'bounds': None, 'gradients': 'exact', 'compute_im': False, 'callback': None,
+#                         'constraints':True,'constFunc':TopoWavconstSingleMode,'minfreq':.265,'maxfreq':.275,'minrad':27.5/266,'mindist':40/266,"optMode":20,
+#                         'crystal':TopoWave,'kpoints':(tuple(path[:,8]),(tuple(path[:,4]),),(tuple(path[:,18]),tuple(path[:,24]),)),'a':266,"bandwidth":.008}}
 
 # experiment(runs,ID)
+
+# with open('results/ForceParamTest/51000.1.json') as file:
+#     data = json.load(file)['iterations']
+
+# last = list(data.values())[250]
+
+# dxF = {eval(key):value for key,value in last['dx'].items()}
+# dyF = {eval(key):value for key,value in last['dy'].items()}
+# drF = {eval(key):value for key,value in last['dr'].items()}
+
+# dx = {**dxF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+# dy = {**dyF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+# dr = {**drF,**{(0,-2,0):0,(0,-2,1):0,(0,3,0):0,(0,3,1):0}}
+
+# runs = {'name':'alphaDng_runs',
+#                     'BIW_BW250': {'dx': dx, 'dy': dy, 'dr': dr,'Nx': 1, 'Ny': 21, 'dslab': 170/266, 'n_slab': 3.4638**2,'ra': (r0,r1),
+#                         'gmax': 2, 'method': 'trust-constr', 'objective_function': of_alphaDng, 'nk':1,
+#                         'bounds': None, 'gradients': 'exact', 'compute_im': False, 'callback': None,
+#                         'constraints':True,'constFunc':TopoWavconstSingleMode,'minfreq':.255,'maxfreq':.27,'minrad':27.5/266,'mindist':40/266,"optMode":20,
+#                         'crystal':TopoWave,'kpoints':(tuple(path[:,8]),(tuple(path[:,4]),),(tuple(path[:,18]),tuple(path[:,24]),)),'a':266,"bandwidth":.005},
+#                     'BIW_BW250_larger': {'dx': dx, 'dy': dy, 'dr': dr,'Nx': 1, 'Ny': 21, 'dslab': 170/266, 'n_slab': 3.4638**2,'ra': (r0,r1),
+#                         'gmax': 2, 'method': 'trust-constr', 'objective_function': of_alphaDng, 'nk':1,
+#                         'bounds': None, 'gradients': 'exact', 'compute_im': False, 'callback': None,
+#                         'constraints':True,'constFunc':TopoWavconstSingleMode,'minfreq':.265,'maxfreq':.275,'minrad':27.5/266,'mindist':40/266,"optMode":20,
+#                         'crystal':TopoWave,'kpoints':(tuple(path[:,8]),(tuple(path[:,4]),),(tuple(path[:,18]),tuple(path[:,24]),)),'a':266,"bandwidth":.008}}
+
+# experiment(runs,ID)
+
+
 # %%
-from process import NoiseTest
-from defineCrystal import TopoCav
-from process import bands
-
-phc,_ = TopoCav(Nx=40,Ny=40,sideLength=21)
-
-NoiseTest(phc,bands,noiseSTD=.015,nruns=20,path='results/noise/topoConv/t1.json',gmax=1.5,maxMode=2000)
-NoiseTest(phc,bands,noiseSTD=.01,nruns=20,path='results/noise/topoConv/t2.json',gmax=1.5,maxMode=2000)
-NoiseTest(phc,bands,noiseSTD=.005,nruns=20,path='results/noise/topoConv/t3.json',gmax=1.5,maxMode=2000)
-NoiseTest(phc,bands,noiseSTD=.001,nruns=20,path='results/noise/topoConv/t4.json',gmax=1.5,maxMode=2000)
